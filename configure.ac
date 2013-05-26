@@ -26,4 +26,7 @@ AC_SUBST(VISIBILITY, ${VISIBILITY})
 AC_DEFINE_UNQUOTED(EXPORT_FUNCTION, [${EXPORT_FUNCTION}],
   [How to declare exported function.])
 
+AC_DEFINE_DIR(SYSCONF_DIR, sysconfdir,
+  [System configuration directory (typically /etc).])
+
 AC_OUTPUT

@@ -1,10 +1,29 @@
 /* -*- mode: c; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*- */
 
+#include <stdlib.h>
+#include <stdio.h>
 #include "netrc.h"
 
 int
 main(void)
 {
-    netrc_foo();
-    return 0;
+    char *netrc_path;
+    int ret;
+
+    ret = netrc_find_file(&netrc_path);
+    switch (ret) {
+    case NETRC_OK:
+        printf("Found netrc file at %s\n", netrc_path);
+        ret = EXIT_SUCCESS;
+        break;
+    case NETRC_ENOENT:
+        printf("Couldn't find netrc file\n");
+        ret = EXIT_SUCCESS;
+        break;
+    default:
+        printf("Got unexpected error %d while looking for netrc file\n", ret);
+        ret = EXIT_FAILURE;
+    }
+
+    return ret;
 }
