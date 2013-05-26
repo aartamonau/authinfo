@@ -9,7 +9,11 @@ AC_CONFIG_SRCDIR([src/main.c])
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_HEADERS([config.h])
 
-AC_PROG_CC
+AC_PROG_CC_C99
+
+if test "x${ac_cv_prog_cc_c99}" = xno; then
+  AC_MSG_ERROR([A compiler supporting c99 is required])
+fi
 
 AC_CHECK_DECL([__GNUC__], [GCC=yes], [GCC=no])
 
