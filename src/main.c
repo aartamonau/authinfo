@@ -21,7 +21,8 @@ main(void)
         ret = EXIT_SUCCESS;
         break;
     default:
-        printf("Got unexpected error %d while looking for netrc file\n", ret);
+        printf("Got unexpected error while "
+               "looking for netrc file: %s\n", netrc_strerror(ret));
         ret = EXIT_FAILURE;
     }
 

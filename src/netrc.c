@@ -26,6 +26,24 @@ static enum netrc_result_t netrc_find_file_in_dir(const char *dir,
                                                   char **pathp);
 /* internal functions prototypes end */
 
+static const char *netrc_result2str[] = {
+    [NETRC_OK] = "Success",
+    [NETRC_EACCESS] = "Permission denied",
+    [NETRC_ENOENT] = "File or directory not found",
+    [NETRC_ENOMEM] = "Could not allocate memory",
+    [NETRC_EUNKNOWN] = "Unknown error happened",
+};
+
+const char *
+netrc_strerror(enum netrc_result_t status)
+{
+    if (status >= NETRC_RESULT_MAX) {
+        return "Got unexpected status code";
+    }
+
+    return netrc_result2str[status];
+}
+
 enum netrc_result_t
 netrc_find_file(char **path)
 {
@@ -74,7 +92,7 @@ netrc_find_file_in_dir(const char *dir, const char *name, char **pathp)
     *pathp = path;
 
     ret = netrc_path_probe(path);
-    TRACE("Probed %s: %d\n", path, ret);
+    TRACE("Probed %s: %s\n", path, netrc_strerror(ret));
 
     if (ret != NETRC_OK) {
         free(path);

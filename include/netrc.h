@@ -21,7 +21,17 @@ enum netrc_result_t {
     NETRC_ENOENT,               /**< Path does not exist.  */
     NETRC_ENOMEM,               /**< Not enough memory. */
     NETRC_EUNKNOWN,             /**< Some unexpected condition happened. */
+    NETRC_RESULT_MAX
 };
+
+/**
+ * Return a human readable description for a status code.
+ *
+ * @param status status to describe
+ *
+ * @return description
+ */
+EXPORT_FUNCTION const char *netrc_strerror(enum netrc_result_t status);
 
 /**
  * Find a netrc file to use.
