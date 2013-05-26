@@ -2,6 +2,7 @@ ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = $(VISIBILITY)
 AM_CPPFLAGS = -I$(top_srcdir)/include/
 
+noinst_HEADERS = $(top_srcdir)/include/netrc_internal.h
 include_HEADERS = $(top_srcdir)/include/netrc.h
 
 noinst_LTLIBRARIES = libnetrc_impl.la
