@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = $(VISIBILITY)
+AM_CFLAGS = $(VISIBILITY) -Wall -Werror
 AM_CPPFLAGS = -I$(top_srcdir)/include/
 
 noinst_HEADERS = $(top_srcdir)/include/netrc_internal.h
