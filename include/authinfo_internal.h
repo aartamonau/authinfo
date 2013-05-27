@@ -1,5 +1,5 @@
-#ifndef _NETRC_INTERNAL_H_
-#define _NETRC_INTERNAL_H_
+#ifndef _AUTHINFO_INTERNAL_H_
+#define _AUTHINFO_INTERNAL_H_
 
 #include <stdio.h>
 
@@ -13,4 +13,4 @@
 #  define TRACE(...)
 #endif
 
-#endif /* _NETRC_INTERNAL_H_ */
+#endif /* _AUTHINFO_INTERNAL_H_ */

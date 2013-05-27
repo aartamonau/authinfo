@@ -2,43 +2,43 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "netrc.h"
+#include "authinfo.h"
 
 static void
 dump_file(const char *path)
 {
     char buf[10240];
-    enum netrc_result_t ret;
+    enum authinfo_result_t ret;
 
-    ret = netrc_read_file(path, buf, sizeof(buf));
-    if (ret != NETRC_OK) {
-        printf("Could not read netrc file: %s\n", netrc_strerror(ret));
+    ret = authinfo_read_file(path, buf, sizeof(buf));
+    if (ret != AUTHINFO_OK) {
+        printf("Could not read authinfo file: %s\n", authinfo_strerror(ret));
         return;
     }
 
-    printf("netrc file (%s) dump:\n%s", path, buf);
+    printf("authinfo file (%s) dump:\n%s", path, buf);
 }
 
 int
 main(void)
 {
-    char *netrc_path;
+    char *authinfo_path;
     int ret;
 
-    ret = netrc_find_file(&netrc_path);
+    ret = authinfo_find_file(&authinfo_path);
     switch (ret) {
-    case NETRC_OK:
-        printf("Found netrc file at %s\n", netrc_path);
-        dump_file(netrc_path);
+    case AUTHINFO_OK:
+        printf("Found authinfo file at %s\n", authinfo_path);
+        dump_file(authinfo_path);
         ret = EXIT_SUCCESS;
         break;
-    case NETRC_ENOENT:
-        printf("Couldn't find netrc file\n");
+    case AUTHINFO_ENOENT:
+        printf("Couldn't find authinfo file\n");
         ret = EXIT_SUCCESS;
         break;
     default:
         printf("Got unexpected error while "
-               "looking for netrc file: %s\n", netrc_strerror(ret));
+               "looking for authinfo file: %s\n", authinfo_strerror(ret));
         ret = EXIT_FAILURE;
     }
 

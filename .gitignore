@@ -13,11 +13,11 @@
 /configure
 /depcomp
 /install-sh
-/libnetrc.la
-/libnetrc_impl.la
+/libauthinfo.la
+/libauthinfo_impl.la
 /libtool
 /ltmain.sh
 /missing
-/netrc
-/netrc.lo
+/authinfo
+/authinfo.lo
 /stamp-h1

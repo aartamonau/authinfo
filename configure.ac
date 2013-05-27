@@ -1,6 +1,6 @@
 AC_PREREQ([2.69])
 
-AC_INIT([libnetrc], [0.1], [https://github.com/aartamonau/libnetrc/issues])
+AC_INIT([libauthinfo], [0.1], [https://github.com/aartamonau/libauthinfo/issues])
 AM_INIT_AUTOMAKE
 LT_INIT([static])
 
