@@ -20,6 +20,7 @@ enum netrc_result_t {
     NETRC_EACCESS,              /**< Couldn't access some path. */
     NETRC_ENOENT,               /**< Path does not exist.  */
     NETRC_ENOMEM,               /**< Not enough memory. */
+    NETRC_TOOBIG,               /**< Netrc file is too big. */
     NETRC_EUNKNOWN,             /**< Some unexpected condition happened. */
     NETRC_RESULT_MAX
 };
@@ -41,5 +42,17 @@ EXPORT_FUNCTION const char *netrc_strerror(enum netrc_result_t status);
  * @return status
  */
 EXPORT_FUNCTION enum netrc_result_t netrc_find_file(char **path);
+
+/**
+ * Read file contents into a buffer
+ *
+ * @param path file path
+ * @param buffer buffer to read the file into
+ * @param size buffer size
+ *
+ * @return status
+ */
+EXPORT_FUNCTION enum netrc_result_t
+netrc_read_file(const char *path, char *buffer, size_t size);
 
 #endif /* _NETRC_H_ */

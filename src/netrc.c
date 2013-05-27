@@ -10,6 +10,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <assert.h>
 
 #include "netrc.h"
 #include "netrc_internal.h"
@@ -18,7 +21,12 @@
 #define NETRC "netrc"
 #define DOT_NETRC (DOT NETRC)
 
+/* internal macros */
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+/* internal macros end */
+
 /* internal functions prototypes */
+static enum netrc_result_t netrc_errno2result(int errnum);
 static char *netrc_path_join(const char *dir, const char *name);
 static enum netrc_result_t netrc_path_probe(const char *path);
 static enum netrc_result_t netrc_find_file_in_dir(const char *dir,
@@ -31,6 +39,7 @@ static const char *netrc_result2str[] = {
     [NETRC_EACCESS] = "Permission denied",
     [NETRC_ENOENT] = "File or directory not found",
     [NETRC_ENOMEM] = "Could not allocate memory",
+    [NETRC_TOOBIG] = "Netrc file is too big",
     [NETRC_EUNKNOWN] = "Unknown error happened",
 };
 
@@ -62,7 +71,78 @@ netrc_find_file(char **path)
     return netrc_find_file_in_dir(SYSCONF_DIR, NETRC, path);
 }
 
+enum netrc_result_t
+netrc_read_file(const char *path, char *buffer, size_t size)
+{
+    int fd;
+
+    while (true) {
+        fd = open(path, O_RDONLY);
+        if (fd != -1) {
+            break;
+        }
+
+        if (errno == EINTR) {
+            continue;
+        } else {
+            TRACE("Could not open netrc file: %s\n", strerror(errno));
+            return netrc_errno2result(errno);
+        }
+    }
+
+    while (true) {
+        ssize_t nread;
+
+        if (size == 0) {
+            return NETRC_TOOBIG;
+        }
+
+        nread = read(fd, buffer, MIN(size, 0xffff));
+        if (nread == -1) {
+            if (errno == EINTR) {
+                continue;
+            } else {
+                TRACE("Could not read netrc file: %s\n", strerror(errno));
+                return netrc_errno2result(errno);
+            }
+        } else if (nread == 0) {
+            assert(size != 0);
+            *buffer = '\0';
+            return NETRC_OK;
+        }
+
+        assert(size >= nread);
+
+        size -= nread;
+        buffer += nread;
+    }
+}
+
 /* internal */
+static enum netrc_result_t
+netrc_errno2result(int errnum)
+{
+    enum netrc_result_t ret;
+
+    switch (errnum) {
+    case EACCES:
+        ret = NETRC_EACCESS;
+        break;
+    case ENOENT:
+    case ENOTDIR:
+    case ELOOP:
+        ret = NETRC_ENOENT;
+        break;
+    case ENOMEM:
+        ret = NETRC_ENOMEM;
+        break;
+    default:
+        ret = NETRC_EUNKNOWN;
+    }
+
+    return ret;
+}
+
 static char *
 netrc_path_join(const char *dir, const char *name)
 {
@@ -107,19 +187,7 @@ netrc_path_probe(const char *path)
     enum netrc_result_t ret = NETRC_OK;
 
     if (access(path, R_OK) != 0) {
-        switch (errno) {
-        case ENOENT:
-        case ENOTDIR:
-        case ELOOP:
-            ret = NETRC_ENOENT;
-            break;
-        case EACCES:
-            ret = NETRC_EACCESS;
-            break;
-        default:
-            TRACE("got unexpected error %s\n", strerror(errno));
-            ret = NETRC_EUNKNOWN;
-        }
+        ret = netrc_errno2result(errno);
     }
 
     return ret;
