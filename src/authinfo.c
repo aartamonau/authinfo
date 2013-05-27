@@ -20,6 +20,8 @@
 #define DOT "."
 #define AUTHINFO "authinfo"
 #define DOT_AUTHINFO (DOT AUTHINFO)
+#define NETRC "netrc"
+#define DOT_NETRC (DOT NETRC)
 
 /* internal macros */
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -66,9 +68,19 @@ authinfo_find_file(char **path)
             /* we either successfully found the file or got some error */
             return ret;
         }
+
+        ret = authinfo_find_file_in_dir(home, DOT_NETRC, path);
+        if (ret != AUTHINFO_ENOENT) {
+            return ret;
+        }
     }
 
-    return authinfo_find_file_in_dir(SYSCONF_DIR, AUTHINFO, path);
+    ret = authinfo_find_file_in_dir(SYSCONF_DIR, AUTHINFO, path);
+    if (ret != AUTHINFO_ENOENT) {
+        return ret;
+    }
+
+    return authinfo_find_file_in_dir(SYSCONF_DIR, NETRC, path);
 }
 
 enum authinfo_result_t
