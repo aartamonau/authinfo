@@ -12,6 +12,7 @@
 #ifndef _AUTHINFO_H_
 #define _AUTHINFO_H_
 
+#include <stdbool.h>
 #include "config.h"
 
 /// Indicates if certain call completed successfully
@@ -54,5 +55,38 @@ EXPORT_FUNCTION enum authinfo_result_t authinfo_find_file(char **path);
  */
 EXPORT_FUNCTION enum authinfo_result_t
 authinfo_read_file(const char *path, char *buffer, size_t size);
+
+/// TODO
+struct authinfo_parse_entry_t {
+    const char *host;
+    const char *protocol;
+    const char *user;
+    const char *password;
+    bool force;
+};
+
+/// TODO
+typedef bool
+(*authinfo_parse_entry_cb_t)(const struct authinfo_parse_entry_t *, void *);
+
+/// TODO
+enum authinfo_parse_error_type_t {
+    AUTHINFO_PET_MISSING_HOST,
+    AUTHINFO_PET_MISSING_VALUE,
+    AUTHINFO_PET_VALUE_TOO_LONG,
+    AUTHINFO_PET_BAD_VALUE,
+    AUTHINFO_PET_BAD_KEYWORD,
+    AUTHINFO_PET_DUPLICATED_KEYWORD
+};
+
+/// TODO
+typedef bool
+(*authinfo_parse_error_cb_t)(enum authinfo_parse_error_type_t,
+                             unsigned int line, unsigned int column, void *);
+
+/// TODO
+EXPORT_FUNCTION void authinfo_parse(const char *data, void *arg,
+                                    authinfo_parse_entry_cb_t entry_callback,
+                                    authinfo_parse_error_cb_t error_callback);
 
 #endif /* _AUTHINFO_H_ */

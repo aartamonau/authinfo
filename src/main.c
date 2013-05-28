@@ -4,8 +4,27 @@
 #include <stdio.h>
 #include "authinfo.h"
 
+static bool
+entry_callback(const struct authinfo_parse_entry_t *entry, void *arg)
+{
+    printf("Entry: host %s, protocol %s, user %s, password %s, force %s\n",
+           entry->host, entry->protocol, entry->user, entry->password,
+           (entry->force ? "true" : "false"));
+    /* don't stop */
+    return false;
+}
+
+static bool
+error_callback(enum authinfo_parse_error_type_t type,
+               unsigned int line, unsigned int column, void *arg)
+{
+    printf("Error in line %u, column %u: %d\n", line, column, type);
+    /* don't stop */
+    return false;
+}
+
 static void
-dump_file(const char *path)
+parse_file(const char *path)
 {
     char buf[10240];
     enum authinfo_result_t ret;
@@ -16,7 +35,13 @@ dump_file(const char *path)
         return;
     }
 
-    printf("authinfo file (%s) dump:\n%s", path, buf);
+    printf("\n============================================================\n");
+    printf("%s\n", path);
+    printf("============================================================\n");
+    printf("%s", buf);
+
+    printf("\n=========================parse results=========================\n");
+    authinfo_parse(buf, NULL, entry_callback, error_callback);
 }
 
 int
@@ -29,7 +54,7 @@ main(void)
     switch (ret) {
     case AUTHINFO_OK:
         printf("Found authinfo file at %s\n", authinfo_path);
-        dump_file(authinfo_path);
+        parse_file(authinfo_path);
         ret = EXIT_SUCCESS;
         break;
     case AUTHINFO_ENOENT:
