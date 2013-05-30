@@ -391,6 +391,26 @@ authinfo_parse(const char *data, void *arg,
     }
 }
 
+
+static const char *authinfo_parse_error_type2str[] = {
+    [AUTHINFO_PET_MISSING_HOST] = "Host not specified",
+    [AUTHINFO_PET_MISSING_VALUE] = "Expected a value",
+    [AUTHINFO_PET_VALUE_TOO_LONG] = "Value is too long",
+    [AUTHINFO_PET_BAD_VALUE] = "Invalid value",
+    [AUTHINFO_PET_BAD_KEYWORD] = "Unknown keyword used",
+    [AUTHINFO_PET_DUPLICATED_KEYWORD] = "Duplicate or synonymous keyword",
+};
+
+const char *
+authinfo_parse_strerror(enum authinfo_parse_error_type_t error)
+{
+    if (error >= AUTHINFO_PET_MAX) {
+        return "Unknown";
+    } else {
+        return authinfo_parse_error_type2str[error];
+    }
+}
+
 /* internal */
 static enum authinfo_result_t
 authinfo_errno2result(int errnum)
@@ -574,9 +594,9 @@ authinfo_report_error(authinfo_parse_error_cb_t error_callback, void *arg,
                       unsigned int line, unsigned int column)
 {
     bool stop = (*error_callback)(type, line, column, arg);
-    TRACE("Reported an error: %d (%u:%u) => %s\n",
-          type, line, column,
-          stop ? "stopping" : "continuing");
+    TRACE("Reported an error: %s (%u:%u) => %s\n",
+          authinfo_parse_strerror(type),
+          line, column, stop ? "stopping" : "continuing");
 
     return stop;
 }

@@ -18,7 +18,8 @@ static bool
 error_callback(enum authinfo_parse_error_type_t type,
                unsigned int line, unsigned int column, void *arg)
 {
-    printf("Error in line %u, column %u: %d\n", line, column, type);
+    printf("Error in line %u, column %u: %s\n",
+           line, column, authinfo_parse_strerror(type));
     /* don't stop */
     return false;
 }

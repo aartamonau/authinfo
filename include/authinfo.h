@@ -76,8 +76,13 @@ enum authinfo_parse_error_type_t {
     AUTHINFO_PET_VALUE_TOO_LONG,
     AUTHINFO_PET_BAD_VALUE,
     AUTHINFO_PET_BAD_KEYWORD,
-    AUTHINFO_PET_DUPLICATED_KEYWORD
+    AUTHINFO_PET_DUPLICATED_KEYWORD,
+    AUTHINFO_PET_MAX
 };
+
+/// TODO
+EXPORT_FUNCTION const char *
+authinfo_parse_strerror(enum authinfo_parse_error_type_t error);
 
 /// TODO
 typedef bool
