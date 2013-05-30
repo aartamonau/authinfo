@@ -546,7 +546,10 @@ authinfo_skip_macdef(const char **str,
 
     if (authinfo_next_token(&token_end, &token_end_column, token) &&
         strcmp(token, "macdef") == 0) {
+
+#ifdef DEBUG
         unsigned int start_line = *line;
+#endif
 
         *column = token_end_column;
         *str = token_end;
