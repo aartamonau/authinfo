@@ -287,8 +287,8 @@ authinfo_parse(const char *data, void *arg,
                 if (strcmp(token, "default") == 0) {
                     /* empty will indicate the default match entry */
                     host[0] = '\0';
-                    entry.host = host;
                     report_duplicate = (entry.host != NULL);
+                    entry.host = host;
                 } else if (strcmp(token, "machine") == 0 ||
                            strcmp(token, "host") == 0) {
                     state = WAITING_HOST;
