@@ -56,40 +56,60 @@ EXPORT_FUNCTION enum authinfo_result_t authinfo_find_file(char **path);
 EXPORT_FUNCTION enum authinfo_result_t
 authinfo_read_file(const char *path, char *buffer, size_t size);
 
-/// TODO
+/// Represents an entry in authinfo file.
 struct authinfo_parse_entry_t {
-    const char *host;
-    const char *protocol;
-    const char *user;
-    const char *password;
-    bool force;
+    const char *host;           /**< Host. Empty for the "default" entry. */
+    const char *protocol;       /**< Protocol. NULL if omitted. */
+    const char *user;           /**< User. NULL if omitted. */
+    const char *password;       /**< Password. NULL if omitted. */
+    bool force;                 /**< Force. 'false' by default. */
 };
 
-/// TODO
+/// A callback that is called for every entry in the file. The callback takes
+/// a parsed entry and an arbitrary argument passed to authinfo_parse(). The
+/// callback should return a boolean value that indicates if parsing should be
+/// stopped or continued.
 typedef bool
 (*authinfo_parse_entry_cb_t)(const struct authinfo_parse_entry_t *, void *);
 
-/// TODO
+/// Possible parsing error.
 enum authinfo_parse_error_type_t {
-    AUTHINFO_PET_MISSING_HOST,
-    AUTHINFO_PET_MISSING_VALUE,
-    AUTHINFO_PET_VALUE_TOO_LONG,
-    AUTHINFO_PET_BAD_VALUE,
-    AUTHINFO_PET_BAD_KEYWORD,
-    AUTHINFO_PET_DUPLICATED_KEYWORD,
+    AUTHINFO_PET_MISSING_HOST,  /**< Host name was not specified. */
+    AUTHINFO_PET_MISSING_VALUE, /**< Expected a value but got nothing. */
+    AUTHINFO_PET_VALUE_TOO_LONG, /**< Value is too long to be handled. */
+    AUTHINFO_PET_BAD_VALUE,     /**< Invalid value. */
+    AUTHINFO_PET_BAD_KEYWORD,   /**< Encountered unknown keyword. */
+    AUTHINFO_PET_DUPLICATED_KEYWORD, /**< Encountered duplicate or synonymous
+                                      * keyword */
     AUTHINFO_PET_MAX
 };
 
-/// TODO
+/**
+ * Convert parse error to a human readable description.
+ *
+ * @param error parse error to describe
+ *
+ * @return description
+ */
 EXPORT_FUNCTION const char *
 authinfo_parse_strerror(enum authinfo_parse_error_type_t error);
 
-/// TODO
+/// A callback that is called for every parsing error. The callback takes
+/// error type, line, column and arbitrary argument passed to
+/// authinfo_parse(). The callback should return a boolean value that
+/// indicates if parsing should be stopped or continued.
 typedef bool
 (*authinfo_parse_error_cb_t)(enum authinfo_parse_error_type_t,
                              unsigned int line, unsigned int column, void *);
 
-/// TODO
+/**
+ * Parse authinfo file.
+ *
+ * @param data authinfo file as a C string
+ * @param arg arbitrary argument that will be passed to callbacks
+ * @param entry_callback a callback to be called for every parsed entry
+ * @param error_callback a callback to be called for every parsing error
+ */
 EXPORT_FUNCTION void authinfo_parse(const char *data, void *arg,
                                     authinfo_parse_entry_cb_t entry_callback,
                                     authinfo_parse_error_cb_t error_callback);
