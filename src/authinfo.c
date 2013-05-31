@@ -25,6 +25,11 @@
 
 #define TOKEN_SIZE_MAX 128
 
+struct authinfo_parse_error_t {
+    enum authinfo_parse_error_type_t type;
+    unsigned long column;
+};
+
 /* internal macros */
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 /* internal macros end */
@@ -66,7 +71,8 @@ authinfo_report_error(authinfo_parse_error_cb_t error_callback, void *arg,
                       unsigned int line, unsigned int column);
 
 static bool
-authinfo_next_token(const char **str, unsigned int *column, char *token);
+authinfo_next_token(const char **str, unsigned int *column, char *token,
+                    struct authinfo_parse_error_t *error);
 /* internal functions prototypes end */
 
 static const char *authinfo_result2str[] = {
@@ -218,6 +224,7 @@ authinfo_parse(const char *data, void *arg,
 
     while (!stop) {
         char token[TOKEN_SIZE_MAX];
+        struct authinfo_parse_error_t parse_error;
 
         unsigned long token_column = column;
         authinfo_skip_spaces(&data, &column);
@@ -279,7 +286,7 @@ authinfo_parse(const char *data, void *arg,
             state = LINE_START;
             break;
         case WAITING_NEXT_PAIR:
-            if (authinfo_next_token(&data, &column, token)) {
+            if (authinfo_next_token(&data, &column, token, &parse_error)) {
                 bool report_duplicate = false;
 
                 TRACE("Read token \"%s\"\n", token);
@@ -321,9 +328,17 @@ authinfo_parse(const char *data, void *arg,
 
                 }
             } else {
-                stop = authinfo_report_error(error_callback, arg,
-                                             AUTHINFO_PET_BAD_KEYWORD,
-                                             line, token_column);
+                switch (parse_error.type) {
+                case AUTHINFO_PET_VALUE_TOO_LONG:
+                    stop = authinfo_report_error(error_callback, arg,
+                                                 AUTHINFO_PET_BAD_KEYWORD,
+                                                 line, parse_error.column);
+                    break;
+                default:
+                    stop = authinfo_report_error(error_callback, arg,
+                                                 parse_error.type, line,
+                                                 parse_error.column);
+                }
             }
             break;
         case WAITING_HOST:
@@ -331,7 +346,7 @@ authinfo_parse(const char *data, void *arg,
         case WAITING_USER:
         case WAITING_PASSWORD:
         case WAITING_FORCE:
-            if (authinfo_next_token(&data, &column, token)) {
+            if (authinfo_next_token(&data, &column, token, &parse_error)) {
                 TRACE("Read token \"%s\"\n", token);
 
                 switch (state) {
@@ -373,8 +388,8 @@ authinfo_parse(const char *data, void *arg,
                 state = WAITING_NEXT_PAIR;
             } else {
                 stop = authinfo_report_error(error_callback, arg,
-                                             AUTHINFO_PET_VALUE_TOO_LONG,
-                                             line, token_column);
+                                             parse_error.type,
+                                             line, parse_error.column);
                 state = WAITING_NEXT_PAIR;
             }
 
@@ -539,7 +554,7 @@ authinfo_skip_macdef(const char **str,
     const char *token_end = *str;
     unsigned int token_end_column = *column;
 
-    if (authinfo_next_token(&token_end, &token_end_column, token) &&
+    if (authinfo_next_token(&token_end, &token_end_column, token, NULL) &&
         strcmp(token, "macdef") == 0) {
 
 #ifdef DEBUG
@@ -600,7 +615,8 @@ authinfo_report_error(authinfo_parse_error_cb_t error_callback, void *arg,
 }
 
 static bool
-authinfo_next_token(const char **str, unsigned int *column, char *token)
+authinfo_next_token(const char **str, unsigned int *column, char *token,
+                    struct authinfo_parse_error_t *error)
 {
     size_t cspan;
     bool ret = true;
@@ -609,6 +625,10 @@ authinfo_next_token(const char **str, unsigned int *column, char *token)
     cspan = strcspn(*str, " \t\n");
 
     if (cspan >= TOKEN_SIZE_MAX) {
+        if (error != NULL) {
+            error->type = AUTHINFO_PET_VALUE_TOO_LONG;
+            error->column = *column;
+        }
         ret = false;
     } else {
         memcpy(token, *str, cspan);
