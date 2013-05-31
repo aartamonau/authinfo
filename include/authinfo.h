@@ -81,6 +81,9 @@ enum authinfo_parse_error_type_t {
     AUTHINFO_PET_BAD_KEYWORD,   /**< Encountered unknown keyword. */
     AUTHINFO_PET_DUPLICATED_KEYWORD, /**< Encountered duplicate or synonymous
                                       * keyword */
+    AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN, /**< Quoted token ends
+                                             * unexpectedly. */
+    AUTHINFO_PET_UNSUPPORTED_ESCAPE, /**< Unsupported escape sequence found. */
     AUTHINFO_PET_MAX
 };
 

@@ -73,6 +73,10 @@ authinfo_report_error(authinfo_parse_error_cb_t error_callback, void *arg,
 static bool
 authinfo_next_token(const char **str, unsigned int *column, char *token,
                     struct authinfo_parse_error_t *error);
+
+static bool
+authinfo_quoted_token(const char **str, unsigned int *column, char *token,
+                      struct authinfo_parse_error_t *error);
 /* internal functions prototypes end */
 
 static const char *authinfo_result2str[] = {
@@ -409,6 +413,8 @@ static const char *authinfo_parse_error_type2str[] = {
     [AUTHINFO_PET_BAD_VALUE] = "Invalid value",
     [AUTHINFO_PET_BAD_KEYWORD] = "Unknown keyword used",
     [AUTHINFO_PET_DUPLICATED_KEYWORD] = "Duplicate or synonymous keyword",
+    [AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN] = "Quoted token ended unexpectedly",
+    [AUTHINFO_PET_UNSUPPORTED_ESCAPE] = "Unsupported escape sequence"
 };
 
 const char *
@@ -621,7 +627,10 @@ authinfo_next_token(const char **str, unsigned int *column, char *token,
     size_t cspan;
     bool ret = true;
 
-    /* TODO: handle quoted tokens */
+    if (**str == '"') {
+        return authinfo_quoted_token(str, column, token, error);
+    }
+
     cspan = strcspn(*str, " \t\n");
 
     if (cspan >= TOKEN_SIZE_MAX) {
@@ -639,4 +648,88 @@ authinfo_next_token(const char **str, unsigned int *column, char *token,
     *str += cspan;
 
     return ret;
+}
+
+static bool
+authinfo_quoted_token(const char **str, unsigned int *column, char *token,
+                      struct authinfo_parse_error_t *error)
+{
+    const char *p = *str;
+    enum { NORMAL,
+           SEEN_BACKSLASH,
+           DONE } state = NORMAL;
+    unsigned long token_column = *column;
+    size_t nwritten = 0;
+    bool error_occurred = false;
+
+    assert(*p == '"');
+
+    ++p;
+    *column += 1;
+
+    while (state != DONE) {
+        if (*p == '\n' || *p == '\0') {
+            error_occurred = true;
+            error->type = AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN;
+            error->column = *column;
+            break;
+        }
+
+        switch (state) {
+        case NORMAL:
+            switch (*p) {
+            case '"':
+                state = DONE;
+                break;
+            case '\\':
+                state = SEEN_BACKSLASH;
+                break;
+            default:
+                if (!error_occurred) {
+                    token[nwritten++] = *p;
+                }
+            }
+            break;
+        case SEEN_BACKSLASH:
+            switch (*p) {
+            case '"':
+                if (!error_occurred) {
+                    token[nwritten++] = '"';
+                }
+                state = NORMAL;
+                break;
+            case '\\':
+                if (!error_occurred) {
+                    token[nwritten++] = '\\';
+                }
+                state = NORMAL;
+                break;
+            default:
+                if (!error_occurred) {
+                    error_occurred = true;
+                    error->type = AUTHINFO_PET_UNSUPPORTED_ESCAPE;
+                    error->column = *column - 1;
+                }
+                state = NORMAL;
+            }
+            break;
+        default:
+            /* should not happen */
+            assert(false);
+        }
+
+        if (state != DONE && nwritten >= (TOKEN_SIZE_MAX - 1)) {
+            error_occurred = true;
+            error->type = AUTHINFO_PET_VALUE_TOO_LONG;
+            error->column = token_column;
+        }
+
+        ++p;
+        *column += 1;
+    }
+
+    *str = p;
+    token[nwritten] = '\0';
+
+    return !error_occurred;
 }
