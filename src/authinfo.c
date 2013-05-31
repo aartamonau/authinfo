@@ -321,9 +321,9 @@ authinfo_parse(const char *data, void *arg,
 
                 }
             } else {
-                authinfo_report_error(error_callback, arg,
-                                      AUTHINFO_PET_BAD_KEYWORD,
-                                      line, token_column);
+                stop = authinfo_report_error(error_callback, arg,
+                                             AUTHINFO_PET_BAD_KEYWORD,
+                                             line, token_column);
             }
             break;
         case WAITING_HOST:
@@ -339,9 +339,9 @@ authinfo_parse(const char *data, void *arg,
                     if (strcmp(token, "yes") == 0) {
                         entry.force = true;
                     } else {
-                        authinfo_report_error(error_callback, arg,
-                                              AUTHINFO_PET_BAD_VALUE,
-                                              line, token_column);
+                        stop = authinfo_report_error(error_callback, arg,
+                                                     AUTHINFO_PET_BAD_VALUE,
+                                                     line, token_column);
                     }
 
                     break;
