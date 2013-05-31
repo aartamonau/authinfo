@@ -320,13 +320,10 @@ authinfo_parse(const char *data, void *arg,
                                                  line, token_column);
 
                 }
-
-                break;
             } else {
                 authinfo_report_error(error_callback, arg,
                                       AUTHINFO_PET_BAD_KEYWORD,
                                       line, token_column);
-                break;
             }
             break;
         case WAITING_HOST:
@@ -374,8 +371,6 @@ authinfo_parse(const char *data, void *arg,
 #undef ASSIGN
 
                 state = WAITING_NEXT_PAIR;
-
-                break;
             } else {
                 stop = authinfo_report_error(error_callback, arg,
                                              AUTHINFO_PET_VALUE_TOO_LONG,
