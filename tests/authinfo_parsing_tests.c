@@ -162,6 +162,12 @@ TEST(test_parse_comment_basic)
 
     parse_all("# commented line only\n");
     ASSERT_EMPTY();
+
+    parse_all("   # commented line only");
+    ASSERT_EMPTY();
+
+    parse_all("   # commented line only\n");
+    ASSERT_EMPTY();
 }
 END_TEST
 
