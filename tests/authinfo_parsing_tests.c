@@ -290,6 +290,31 @@ TEST(basic)
 }
 END_TEST
 
+TEST(quoted)
+{
+    parse_all("host hostname user username password \"password\"");
+    ASSERT_SINGLE_ENTRY("hostname", "username", "password", NULL, false);
+
+    parse_all("host hostname user username password \"pass word\"");
+    ASSERT_SINGLE_ENTRY("hostname", "username", "pass word", NULL, false);
+
+    parse_all("host hostname user username password \"pass \\\"word\"");
+    ASSERT_SINGLE_ENTRY("hostname", "username", "pass \"word", NULL, false);
+
+    parse_all("host hostname user username password \"pass \\\"\\\\word\"");
+    ASSERT_SINGLE_ENTRY("hostname", "username", "pass \"\\word", NULL, false);
+
+    parse_all("host hostname user username password \"pass \\\"\\\\\"");
+    ASSERT_SINGLE_ENTRY("hostname", "username", "pass \"\\", NULL, false);
+
+    parse_all("host hostname user username password \" \\\"\\\\\"");
+    ASSERT_SINGLE_ENTRY("hostname", "username", " \"\\", NULL, false);
+
+    parse_all("host hostname user username password \"\\\"\\\\\"");
+    ASSERT_SINGLE_ENTRY("hostname", "username", "\"\\", NULL, false);
+}
+END_TEST
+
 Suite *
 parsing_suite(void)
 {
@@ -305,6 +330,7 @@ parsing_suite(void)
     TEST_CASE(comment_basic, "Basic comment parsing");
     TEST_CASE(macdef_basic, "Basic macdef parsing");
     TEST_CASE(basic, "Basic entry parsing");
+    TEST_CASE(quoted, "Parsing quoted tokens");
 
 #undef TEST_CASE
 
