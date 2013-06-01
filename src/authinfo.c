@@ -25,11 +25,6 @@
 
 #define TOKEN_SIZE_MAX 128
 
-struct authinfo_parse_error_t {
-    enum authinfo_parse_error_type_t type;
-    unsigned long column;
-};
-
 /* internal macros */
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 /* internal macros end */
@@ -612,7 +607,12 @@ authinfo_report_error(authinfo_parse_error_cb_t error_callback, void *arg,
                       enum authinfo_parse_error_type_t type,
                       unsigned int line, unsigned int column)
 {
-    bool stop = (*error_callback)(type, line, column, arg);
+    struct authinfo_parse_error_t error = {
+        .line = line,
+        .column = column,
+        .type = type
+    };
+    bool stop = (*error_callback)(&error, arg);
     TRACE("Reported an error: %s (%u:%u) => %s\n",
           authinfo_parse_strerror(type),
           line, column, stop ? "stopping" : "continuing");

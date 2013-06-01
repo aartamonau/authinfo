@@ -97,13 +97,19 @@ enum authinfo_parse_error_type_t {
 EXPORT_FUNCTION const char *
 authinfo_parse_strerror(enum authinfo_parse_error_type_t error);
 
+/// A structure representing parsing error.
+struct authinfo_parse_error_t {
+    unsigned int line;          /**< Line number. */
+    unsigned int column;        /**< Column number. */
+    enum authinfo_parse_error_type_t type; /**< Error type. */
+};
+
 /// A callback that is called for every parsing error. The callback takes
 /// error type, line, column and arbitrary argument passed to
 /// authinfo_parse(). The callback should return a boolean value that
 /// indicates if parsing should be stopped or continued.
 typedef bool
-(*authinfo_parse_error_cb_t)(enum authinfo_parse_error_type_t,
-                             unsigned int line, unsigned int column, void *);
+(*authinfo_parse_error_cb_t)(const struct authinfo_parse_error_t *, void *);
 
 /**
  * Parse authinfo file.

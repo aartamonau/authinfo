@@ -15,11 +15,10 @@ entry_callback(const struct authinfo_parse_entry_t *entry, void *arg)
 }
 
 static bool
-error_callback(enum authinfo_parse_error_type_t type,
-               unsigned int line, unsigned int column, void *arg)
+error_callback(const struct authinfo_parse_error_t *error, void *arg)
 {
     printf("Error in line %u, column %u: %s\n",
-           line, column, authinfo_parse_strerror(type));
+           error->line, error->column, authinfo_parse_strerror(error->type));
     /* don't stop */
     return false;
 }
