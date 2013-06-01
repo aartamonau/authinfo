@@ -170,9 +170,13 @@ teardown(void)
     ASSERT_STREQ((entry).protocol, protocol_); \
     ck_assert_int_eq((entry).force, force_);
 
+#define ASSERT_NTH_ENTRY(number, host, user, password, protocol, force) \
+    ASSERT_ENTRY(entries[entries_start + (number)], \
+                 host, user, password, protocol, force);
+
 #define ASSERT_SINGLE_ENTRY(host, user, password, protocol, force) \
     ASSERT_PARSES_COUNT(1); \
-    ASSERT_ENTRY(entries[entries_start], host, user, password, protocol, force);
+    ASSERT_NTH_ENTRY(0, host, user, password, protocol, force);
 
 
 #define TEST(name) \
@@ -315,6 +319,90 @@ TEST(quoted)
 }
 END_TEST
 
+TEST(multi_entry)
+{
+    parse_all(
+        "host hostname user username "
+        "password password protocol protocol force yes\n"
+
+        "machine hostname login username "
+        "password password port protocol force yes\n"
+
+        "machine hostname account username "
+        "password password protocol protocol force yes\n"
+
+        "#comment\n"
+
+        "default user username "
+        "password password protocol protocol force yes\n"
+
+        "host hostname user username "
+        "password password protocol protocol\n"
+
+        "    #comment\n"
+
+        "host hostname user username "
+        "password password force yes\n"
+
+        "host hostname user username "
+        "protocol protocol force yes\n"
+
+        "host hostname "
+        "password password protocol protocol force yes\n"
+
+        "macdef test\n"
+        "def\n"
+        "\n"
+
+        "host hostname user username "
+        "password password\n"
+
+        "host hostname user username\n"
+
+        "host hostname\n"
+
+        "host hostname user username password \"password\" \n"
+
+        "host hostname user username password \"pass word\" \n"
+
+        "host hostname user username password \"pass \\\"word\" \n"
+
+        "host hostname user username password \"pass \\\"\\\\word\" \n"
+
+        "host hostname user username password \"pass \\\"\\\\\" \n"
+
+        "host hostname user username password \" \\\"\\\\\" \n"
+
+        "host hostname user username password \"\\\"\\\\\" \n"
+
+        " # find a cool macdef on the next line\n"
+        "macdef cool\n"
+        "really cool");
+
+    ASSERT_PARSES_COUNT(18);
+
+    ASSERT_NTH_ENTRY(0, "hostname", "username", "password", "protocol", true);
+    ASSERT_NTH_ENTRY(1, "hostname", "username", "password", "protocol", true);
+    ASSERT_NTH_ENTRY(2, "hostname", "username", "password", "protocol", true);
+    ASSERT_NTH_ENTRY(3, "", "username", "password", "protocol", true);
+    ASSERT_NTH_ENTRY(4, "hostname", "username", "password", "protocol", false);
+    ASSERT_NTH_ENTRY(5, "hostname", "username", "password", NULL, true);
+    ASSERT_NTH_ENTRY(6, "hostname", "username", NULL, "protocol", true);
+    ASSERT_NTH_ENTRY(7, "hostname", NULL, "password", "protocol", true);
+    ASSERT_NTH_ENTRY(8, "hostname", "username", "password", NULL, false);
+    ASSERT_NTH_ENTRY(9, "hostname", "username", NULL, NULL, false);
+    ASSERT_NTH_ENTRY(10, "hostname", NULL, NULL, NULL, false);
+    ASSERT_NTH_ENTRY(11, "hostname", "username", "password", NULL, false);
+    ASSERT_NTH_ENTRY(12, "hostname", "username", "pass word", NULL, false);
+    ASSERT_NTH_ENTRY(13, "hostname", "username", "pass \"word", NULL, false);
+    ASSERT_NTH_ENTRY(14, "hostname", "username", "pass \"\\word", NULL, false);
+    ASSERT_NTH_ENTRY(15, "hostname", "username", "pass \"\\", NULL, false);
+    ASSERT_NTH_ENTRY(16, "hostname", "username", " \"\\", NULL, false);
+    ASSERT_NTH_ENTRY(17, "hostname", "username", "\"\\", NULL, false);
+
+}
+END_TEST
+
 Suite *
 parsing_suite(void)
 {
@@ -331,6 +419,7 @@ parsing_suite(void)
     TEST_CASE(macdef_basic, "Basic macdef parsing");
     TEST_CASE(basic, "Basic entry parsing");
     TEST_CASE(quoted, "Parsing quoted tokens");
+    TEST_CASE(multi_entry, "Parsing several entries");
 
 #undef TEST_CASE
 
