@@ -155,15 +155,31 @@ TEST(test_parse_empty)
 }
 END_TEST
 
+TEST(test_parse_comment_basic)
+{
+    parse_all("# commented line only");
+    ASSERT_EMPTY();
+
+    parse_all("# commented line only\n");
+    ASSERT_EMPTY();
+}
+END_TEST
+
 Suite *
 parsing_suite(void)
 {
     Suite *s = suite_create("Parsing");
 
-    TCase *tc_empty = tcase_create("Parsing empty file");
-    tcase_add_checked_fixture(tc_empty, setup, teardown);
-    tcase_add_test(tc_empty, test_parse_empty);
-    suite_add_tcase(s, tc_empty);
+#define TEST_CASE(name, desc) \
+    TCase *tc_##name = tcase_create(desc); \
+    tcase_add_checked_fixture(tc_##name, setup, teardown); \
+    tcase_add_test(tc_##name, test_parse_##name); \
+    suite_add_tcase(s, tc_##name);
+
+    TEST_CASE(empty, "Parsing empty file");
+    TEST_CASE(comment_basic, "Basic comment parsing");
+
+#undef TEST_CASE
 
     return s;
 }
