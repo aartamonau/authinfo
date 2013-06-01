@@ -138,7 +138,11 @@ teardown(void)
         ck_abort_msg("Non-empty set of parsed entries or errors"); \
     }
 
-START_TEST(test_parse_empty)
+#define TEST(name) \
+    START_TEST(name); \
+    fprintf(stderr, "==Test: %s=====================\n", #name);
+
+TEST(test_parse_empty)
 {
     parse_all("");
     ASSERT_EMPTY();
