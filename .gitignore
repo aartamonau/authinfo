@@ -21,3 +21,8 @@
 /authinfo
 /authinfo.lo
 /stamp-h1
+/compile
+/test-driver
+/*.log
+/*.trs
+/authinfo_parsing_tests

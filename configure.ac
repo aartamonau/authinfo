@@ -29,4 +29,9 @@ AC_DEFINE_UNQUOTED(EXPORT_FUNCTION, [${EXPORT_FUNCTION}],
 AC_DEFINE_DIR(SYSCONF_DIR, sysconfdir,
   [System configuration directory (typically /etc).])
 
+AM_PROG_CC_C_O
+
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.0], [have_check=yes], [have_check=no])
+AM_CONDITIONAL(HAVE_CHECK, [test x$have_check = xyes])
+
 AC_OUTPUT

@@ -16,6 +16,14 @@ bin_PROGRAMS = authinfo
 authinfo_SOURCES = $(top_srcdir)/src/main.c
 authinfo_LDADD = libauthinfo_impl.la
 
-TESTS = authinfo_tests
-check_PROGRAMS = authinfo_tests
-authinfo_tests_SOURCES = $(top_srcdir)/tests/authinfo_tests.c
+if HAVE_CHECK
+check_PROGRAMS = authinfo_parsing_tests
+else
+check_PROGRAMS =
+endif
+
+TESTS = $(check_PROGRAMS)
+
+authinfo_parsing_tests_SOURCES = $(top_srcdir)/tests/authinfo_parsing_tests.c
+authinfo_parsing_tests_LDADD = @CHECK_LIBS@
+authinfo_parsing_tests_CFLAGS = @CHECK_CFLAGS@
