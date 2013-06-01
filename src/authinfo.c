@@ -526,9 +526,16 @@ authinfo_skip_line(const char **str, unsigned int *line, unsigned int *column)
     size_t cspan;
 
     cspan = strcspn(*str, "\n");
-    *str += cspan + 1;
-    *column = 0;
-    *line += 1;
+    *str += cspan;
+
+    if (**str == '\n') {
+        *str += 1;
+        *column = 0;
+        *line += 1;
+    } else {
+        /* EOF */
+        *column += cspan;
+    }
 }
 
 static bool
