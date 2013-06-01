@@ -8,9 +8,11 @@
 
 #define ITEMS_MAX 50
 
+static int entries_start;
 static int entries_count;
 static struct authinfo_parse_entry_t entries[ITEMS_MAX];
 
+static int errors_start;
 static int errors_count;
 static struct authinfo_parse_error_t errors[ITEMS_MAX];
 
@@ -76,6 +78,9 @@ parse_all_error_cb(const struct authinfo_parse_error_t *error, void *arg)
 static void
 parse_all(const char *data)
 {
+    entries_start = entries_count;
+    errors_start = errors_count;
+
     authinfo_parse(data, NULL, parse_all_entry_cb, parse_all_error_cb);
 }
 
@@ -84,7 +89,7 @@ dump_entries(void)
 {
     if (entries_count) {
         fprintf(stderr, "Parsed entries:\n");
-        for (int i = 0; i < entries_count; ++i) {
+        for (int i = entries_start; i < entries_count; ++i) {
             struct authinfo_parse_entry_t *e = &entries[i];
 
             fprintf(stderr,
@@ -103,7 +108,7 @@ dump_errors(void)
 {
     if (errors_count) {
         fprintf(stderr, "Parsing errors:\n");
-        for (int i = 0; i < errors_count; ++i) {
+        for (int i = errors_start; i < errors_count; ++i) {
             struct authinfo_parse_error_t *e = &errors[i];
 
             fprintf(stderr, "\t%u:%u: %s\n",
@@ -117,7 +122,9 @@ dump_errors(void)
 static void
 setup(void)
 {
+    entries_start = 0;
     entries_count = 0;
+    errors_start = 0;
     errors_count = 0;
 }
 
@@ -129,14 +136,44 @@ teardown(void)
     }
 }
 
+#define NOTE_FAILURE() \
+    fprintf(stderr, "FAILURE: %s:%d\n", __func__, __LINE__);
+
 #define ASSERT_EMPTY() \
-    if (entries_count != 0 || errors_count != 0) { \
-        fprintf(stderr, "FAILURE: %s:%d\n", __func__, __LINE__); \
+    if ((entries_count != entries_start) || (errors_count != errors_start)) { \
+        NOTE_FAILURE(); \
         dump_entries(); \
         dump_errors(); \
-        fprintf(stderr, "\n"); \
         ck_abort_msg("Non-empty set of parsed entries or errors"); \
     }
+
+#define ASSERT_PARSES_COUNT(count) \
+    if ((entries_count - entries_start != (count)) ||   \
+        (errors_count != errors_start)) { \
+        NOTE_FAILURE(); \
+        dump_entries(); \
+        dump_errors(); \
+        ck_abort_msg("Number of parsed entries not equal expected (%d)", count); \
+    }
+
+#define ASSERT_STREQ(x, y) \
+    if ((x) != NULL && (y) != NULL) { \
+        ck_assert_str_eq((x), (y)); \
+    } else { \
+        ck_assert_ptr_eq((x), (y)); \
+    }
+
+#define ASSERT_ENTRY(entry, host_, user_, password_, protocol_, force_) \
+    ASSERT_STREQ((entry).host, host_); \
+    ASSERT_STREQ((entry).user, user_); \
+    ASSERT_STREQ((entry).password, password_); \
+    ASSERT_STREQ((entry).protocol, protocol_); \
+    ck_assert_int_eq((entry).force, force_);
+
+#define ASSERT_SINGLE_ENTRY(host, user, password, protocol, force) \
+    ASSERT_PARSES_COUNT(1); \
+    ASSERT_ENTRY(entries[entries_start], host, user, password, protocol, force);
+
 
 #define TEST(name) \
     START_TEST(name); \
@@ -205,6 +242,54 @@ TEST(test_parse_macdef_basic)
 }
 END_TEST
 
+TEST(test_parse_basic)
+{
+    parse_all("host hostname user username "
+              "password password protocol protocol force yes");
+    ASSERT_SINGLE_ENTRY("hostname", "username", "password", "protocol", true);
+
+    /* test synonymous keywords */
+    parse_all("machine hostname login username "
+              "password password port protocol force yes");
+    ASSERT_SINGLE_ENTRY("hostname", "username", "password", "protocol", true);
+
+    parse_all("machine hostname account username "
+              "password password protocol protocol force yes");
+    ASSERT_SINGLE_ENTRY("hostname", "username", "password", "protocol", true);
+
+    parse_all("default user username "
+              "password password protocol protocol force yes");
+    ASSERT_SINGLE_ENTRY("", "username", "password", "protocol", true);
+
+    /* everything except host can be omitted */
+    parse_all("host hostname user username "
+              "password password protocol protocol");
+    ASSERT_SINGLE_ENTRY("hostname", "username", "password", "protocol", false);
+
+    parse_all("host hostname user username "
+              "password password force yes");
+    ASSERT_SINGLE_ENTRY("hostname", "username", "password", NULL, true);
+
+    parse_all("host hostname user username "
+              "protocol protocol force yes");
+    ASSERT_SINGLE_ENTRY("hostname", "username", NULL, "protocol", true);
+
+    parse_all("host hostname "
+              "password password protocol protocol force yes");
+    ASSERT_SINGLE_ENTRY("hostname", NULL, "password", "protocol", true);
+
+    parse_all("host hostname user username "
+              "password password");
+    ASSERT_SINGLE_ENTRY("hostname", "username", "password", NULL, false);
+
+    parse_all("host hostname user username");
+    ASSERT_SINGLE_ENTRY("hostname", "username", NULL, NULL, false);
+
+    parse_all("host hostname");
+    ASSERT_SINGLE_ENTRY("hostname", NULL, NULL, NULL, false);
+}
+END_TEST
+
 Suite *
 parsing_suite(void)
 {
@@ -219,6 +304,7 @@ parsing_suite(void)
     TEST_CASE(empty, "Parsing empty file");
     TEST_CASE(comment_basic, "Basic comment parsing");
     TEST_CASE(macdef_basic, "Basic macdef parsing");
+    TEST_CASE(basic, "Basic entry parsing");
 
 #undef TEST_CASE
 
