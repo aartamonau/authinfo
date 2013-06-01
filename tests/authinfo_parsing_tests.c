@@ -176,10 +176,10 @@ teardown(void)
 
 
 #define TEST(name) \
-    START_TEST(name); \
+    START_TEST(test_parse_##name); \
     fprintf(stderr, "==Test: %s=====================\n", #name);
 
-TEST(test_parse_empty)
+TEST(empty)
 {
     parse_all("");
     ASSERT_EMPTY();
@@ -207,7 +207,7 @@ TEST(test_parse_empty)
 }
 END_TEST
 
-TEST(test_parse_comment_basic)
+TEST(comment_basic)
 {
     parse_all("# commented line only");
     ASSERT_EMPTY();
@@ -223,7 +223,7 @@ TEST(test_parse_comment_basic)
 }
 END_TEST
 
-TEST(test_parse_macdef_basic)
+TEST(macdef_basic)
 {
     parse_all(
         "macdef test\n"
@@ -242,7 +242,7 @@ TEST(test_parse_macdef_basic)
 }
 END_TEST
 
-TEST(test_parse_basic)
+TEST(basic)
 {
     parse_all("host hostname user username "
               "password password protocol protocol force yes");
