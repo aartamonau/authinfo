@@ -15,3 +15,7 @@ libauthinfo_la_LIBADD = libauthinfo_impl.la
 bin_PROGRAMS = authinfo
 authinfo_SOURCES = $(top_srcdir)/src/main.c
 authinfo_LDADD = libauthinfo_impl.la
+
+TESTS = authinfo_tests
+check_PROGRAMS = authinfo_tests
+authinfo_tests_SOURCES = $(top_srcdir)/tests/authinfo_tests.c
