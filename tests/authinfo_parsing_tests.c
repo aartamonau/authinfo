@@ -147,10 +147,25 @@ TEST(test_parse_empty)
     parse_all("");
     ASSERT_EMPTY();
 
+    parse_all(" ");
+    ASSERT_EMPTY();
+
+    parse_all("\t");
+    ASSERT_EMPTY();
+
     parse_all("\n");
     ASSERT_EMPTY();
 
+    parse_all(" \n");
+    ASSERT_EMPTY();
+
+    parse_all("\t\n");
+    ASSERT_EMPTY();
+
     parse_all("\n\n");
+    ASSERT_EMPTY();
+
+    parse_all("\t\n \n\t ");
     ASSERT_EMPTY();
 }
 END_TEST
