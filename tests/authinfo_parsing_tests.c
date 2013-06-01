@@ -1,8 +1,9 @@
 /* -*- mode: c; c-basic-offset: 4; tab-width: 4; ; indent-tabs-mode: nil; -*- */
 
 #include <assert.h>
-#include <check.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <check.h>
 #include "authinfo.h"
 
 #define ITEMS_MAX 50
@@ -79,6 +80,41 @@ parse_all(const char *data)
 }
 
 static void
+dump_entries(void)
+{
+    if (entries_count) {
+        fprintf(stderr, "Parsed entries:\n");
+        for (int i = 0; i < entries_count; ++i) {
+            struct authinfo_parse_entry_t *e = &entries[i];
+
+            fprintf(stderr,
+                    "\thost -> '%s', protocol -> '%s', "
+                    "user -> '%s', password -> '%s', force -> %s\n",
+                    e->host, e->protocol, e->user, e->password,
+                    (e->force ? "true" : "false"));
+        }
+    } else {
+        fprintf(stderr, "No parsed entries\n");
+    }
+}
+
+static void
+dump_errors(void)
+{
+    if (errors_count) {
+        fprintf(stderr, "Parsing errors:\n");
+        for (int i = 0; i < errors_count; ++i) {
+            struct authinfo_parse_error_t *e = &errors[i];
+
+            fprintf(stderr, "\t%u:%u: %s\n",
+                    e->line, e->column, authinfo_parse_strerror(e->type));
+        }
+    } else {
+        fprintf(stderr, "No parsing errors\n");
+    }
+}
+
+static void
 setup(void)
 {
     entries_count = 0;
@@ -93,19 +129,25 @@ teardown(void)
     }
 }
 
+#define ASSERT_EMPTY() \
+    if (entries_count != 0 || errors_count != 0) { \
+        fprintf(stderr, "FAILURE: %s:%d\n", __func__, __LINE__); \
+        dump_entries(); \
+        dump_errors(); \
+        fprintf(stderr, "\n"); \
+        ck_abort_msg("Non-empty set of parsed entries or errors"); \
+    }
+
 START_TEST(test_parse_empty)
 {
     parse_all("");
-    ck_assert_int_eq(entries_count, 0);
-    ck_assert_int_eq(errors_count, 0);
+    ASSERT_EMPTY();
 
     parse_all("\n");
-    ck_assert_int_eq(entries_count, 0);
-    ck_assert_int_eq(errors_count, 0);
+    ASSERT_EMPTY();
 
     parse_all("\n\n");
-    ck_assert_int_eq(entries_count, 0);
-    ck_assert_int_eq(errors_count, 0);
+    ASSERT_EMPTY();
 }
 END_TEST
 
