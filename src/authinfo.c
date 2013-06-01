@@ -574,9 +574,12 @@ authinfo_skip_macdef(const char **str,
 
         do {
             authinfo_skip_line(str, line, column);
-        } while (**str != '\n');
+        } while (!authinfo_eol(*str));
 
         TRACE("Skipped macdef on lines %u-%u\n", start_line, *line);
+
+        /* skip current empty line (if any) */
+        authinfo_skip_line(str, line, column);
 
         return true;
     }
