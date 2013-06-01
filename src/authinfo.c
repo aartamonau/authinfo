@@ -678,7 +678,7 @@ authinfo_quoted_token(const char **str, unsigned int *column, char *token,
     *column += 1;
 
     while (state != DONE) {
-        if (*p == '\n' || *p == '\0') {
+        if (authinfo_eol(p)) {
             error_occurred = true;
             error->type = AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN;
             error->column = *column;
