@@ -34,4 +34,11 @@ AM_PROG_CC_C_O
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.0], [have_check=yes], [have_check=no])
 AM_CONDITIONAL(HAVE_CHECK, [test x$have_check = xyes])
 
+AC_ARG_ENABLE([debug],
+  [AS_HELP_STRING([--enable-debug],
+          [Enable debug build. @<:@default=off@:>@])],
+  [enable_debug="yes"],
+  [enable_debug="no"])
+AM_CONDITIONAL(DEBUG, [test x$enable_debug = xyes])
+
 AC_OUTPUT

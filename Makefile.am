@@ -1,6 +1,11 @@
 ACLOCAL_AMFLAGS = -I m4
+
+if DEBUG
+DEBUG_CPPFLAGS = -DDEBUG
+endif
+
 AM_CFLAGS = $(VISIBILITY) -Wall -Werror
-AM_CPPFLAGS = -I$(top_srcdir)/include/
+AM_CPPFLAGS = -I$(top_srcdir)/include/ $(DEBUG_CPPFLAGS)
 
 noinst_HEADERS = $(top_srcdir)/include/authinfo_internal.h
 include_HEADERS = $(top_srcdir)/include/authinfo.h
