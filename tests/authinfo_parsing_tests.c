@@ -165,6 +165,25 @@ TEST(test_parse_comment_basic)
 }
 END_TEST
 
+TEST(test_parse_macdef_basic)
+{
+    parse_all(
+        "macdef test\n"
+        "def");
+    ASSERT_EMPTY();
+
+    parse_all(
+        "macdef test\n"
+        "def\n");
+    ASSERT_EMPTY();
+
+    parse_all(
+        "macdef test\n"
+        "def\n\n");
+    ASSERT_EMPTY();
+}
+END_TEST
+
 Suite *
 parsing_suite(void)
 {
@@ -178,6 +197,7 @@ parsing_suite(void)
 
     TEST_CASE(empty, "Parsing empty file");
     TEST_CASE(comment_basic, "Basic comment parsing");
+    TEST_CASE(macdef_basic, "Basic macdef parsing");
 
 #undef TEST_CASE
 
