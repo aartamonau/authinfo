@@ -84,6 +84,34 @@ parse_all(const char *data)
     authinfo_parse(data, NULL, parse_all_entry_cb, parse_all_error_cb);
 }
 
+static bool
+parse_one_entry_cb(const struct authinfo_parse_entry_t *entry, void *arg)
+{
+    assert(entries_count < ITEMS_MAX);
+    copy_entry(&entries[entries_count++], entry);
+
+    return true;
+}
+
+static bool
+parse_one_error_cb(const struct authinfo_parse_error_t *error, void *arg)
+{
+    assert(errors_count < ITEMS_MAX);
+    errors[errors_count++] = *error;
+
+    return true;
+}
+
+static void
+parse_one(const char *data)
+{
+    entries_start = entries_count;
+    errors_start = errors_count;
+
+    authinfo_parse(data, NULL, parse_one_entry_cb, parse_one_error_cb);
+}
+
+
 static void
 dump_entries(void)
 {
@@ -148,8 +176,7 @@ teardown(void)
     }
 
 #define ASSERT_PARSES_COUNT(count) \
-    if ((entries_count - entries_start != (count)) ||   \
-        (errors_count != errors_start)) { \
+    if ((entries_count - entries_start != (count))) { \
         NOTE_FAILURE(); \
         dump_entries(); \
         dump_errors(); \
@@ -176,6 +203,7 @@ teardown(void)
 
 #define ASSERT_SINGLE_ENTRY(host, user, password, protocol, force) \
     ASSERT_PARSES_COUNT(1); \
+    ASSERT_ERRORS_COUNT(0); \
     ASSERT_NTH_ENTRY(0, host, user, password, protocol, force);
 
 #define ASSERT_ERRORS_COUNT(count) \
@@ -398,6 +426,7 @@ TEST(multi_entry)
         "really cool");
 
     ASSERT_PARSES_COUNT(18);
+    ASSERT_ERRORS_COUNT(0);
 
     ASSERT_NTH_ENTRY(0, "hostname", "username", "password", "protocol", true);
     ASSERT_NTH_ENTRY(1, "hostname", "username", "password", "protocol", true);
@@ -452,6 +481,42 @@ TEST(errors)
 }
 END_TEST
 
+TEST(first_only)
+{
+    parse_one(
+        "# comment\n"
+
+        "macdef test\n"
+        "test\n"
+        "\n"
+
+        "host hostname user username "
+        "password password protocol protocol force yes\n"
+
+        "machine hostname login username "
+        "password password port protocol force yes\n"
+
+        "machine hostname account username "
+        "password password protocol protocol force yes\n");
+
+    ASSERT_SINGLE_ENTRY("hostname", "username", "password", "protocol", true);
+
+    parse_one(
+        "# comment\n"
+
+        "macdef test\n"
+        "test\n"
+        "\n"
+
+        "host hostname user username "
+        "password password protocol protocol force true");
+
+    ASSERT_PARSES_COUNT(0);
+    ASSERT_SINGLE_ERROR(AUTHINFO_PET_BAD_VALUE);
+
+}
+END_TEST
+
 Suite *
 parsing_suite(void)
 {
@@ -470,6 +535,7 @@ parsing_suite(void)
     TEST_CASE(quoted, "Parsing quoted tokens");
     TEST_CASE(multi_entry, "Parsing several entries");
     TEST_CASE(errors, "Parsing errors test");
+    TEST_CASE(first_only, "Getting only first parse or error");
 
 #undef TEST_CASE
 
