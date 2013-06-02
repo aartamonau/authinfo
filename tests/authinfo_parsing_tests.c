@@ -178,6 +178,24 @@ teardown(void)
     ASSERT_PARSES_COUNT(1); \
     ASSERT_NTH_ENTRY(0, host, user, password, protocol, force);
 
+#define ASSERT_ERRORS_COUNT(count) \
+    if (errors_count - errors_start != (count)) { \
+        NOTE_FAILURE(); \
+        dump_entries(); \
+        dump_errors(); \
+        ck_abort_msg("Number of parsing errors differs from expected (%d)", (count)); \
+    }
+
+#define ASSERT_NTH_ERROR(number, type_) \
+    if (errors[errors_start + (number)].type != (type_)) { \
+        ck_abort_msg("Error type (%s) differs from expected (%s)", \
+                     authinfo_parse_strerror(errors[errors_start + (number)].type), \
+                     authinfo_parse_strerror((type_))); \
+    }
+
+#define ASSERT_SINGLE_ERROR(type) \
+    ASSERT_ERRORS_COUNT(1); \
+    ASSERT_NTH_ERROR(0, type);
 
 #define TEST(name) \
     START_TEST(test_parse_##name); \
@@ -403,6 +421,38 @@ TEST(multi_entry)
 }
 END_TEST
 
+TEST(errors)
+{
+    parse_all("user username "
+              "password password protocol protocol force yes");
+    ASSERT_SINGLE_ERROR(AUTHINFO_PET_MISSING_HOST);
+
+    parse_all("host hostname user username "
+              "password password protocol");
+    ASSERT_SINGLE_ERROR(AUTHINFO_PET_MISSING_VALUE);
+
+    parse_all("host hostname user username "
+              "password password protocol protocol force true");
+    ASSERT_SINGLE_ERROR(AUTHINFO_PET_BAD_VALUE);
+
+    parse_all("host hostname userr user username "
+              "password password protocol protocol force yes");
+    ASSERT_SINGLE_ERROR(AUTHINFO_PET_BAD_KEYWORD);
+
+    parse_all("host hostname user username account username "
+              "password password protocol protocol force yes");
+    ASSERT_SINGLE_ERROR(AUTHINFO_PET_DUPLICATED_KEYWORD);
+
+    parse_all("host hostname user username "
+              "password \"password protocol protocol force yes");
+    ASSERT_SINGLE_ERROR(AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN);
+
+    parse_all("host hostname user username "
+              "password \"pass\\word\" protocol protocol force yes");
+    ASSERT_SINGLE_ERROR(AUTHINFO_PET_UNSUPPORTED_ESCAPE);
+}
+END_TEST
+
 Suite *
 parsing_suite(void)
 {
@@ -420,6 +470,7 @@ parsing_suite(void)
     TEST_CASE(basic, "Basic entry parsing");
     TEST_CASE(quoted, "Parsing quoted tokens");
     TEST_CASE(multi_entry, "Parsing several entries");
+    TEST_CASE(errors, "Parsing errors test");
 
 #undef TEST_CASE
 
