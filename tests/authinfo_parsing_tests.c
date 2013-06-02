@@ -153,7 +153,7 @@ teardown(void)
         NOTE_FAILURE(); \
         dump_entries(); \
         dump_errors(); \
-        ck_abort_msg("Number of parsed entries not equal expected (%d)", count); \
+        ck_abort_msg("Number of parsed entries differs from expected (%d)", (count)); \
     }
 
 #define ASSERT_STREQ(x, y) \
