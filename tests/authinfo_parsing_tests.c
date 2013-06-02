@@ -417,7 +417,6 @@ TEST(multi_entry)
     ASSERT_NTH_ENTRY(15, "hostname", "username", "pass \"\\", NULL, false);
     ASSERT_NTH_ENTRY(16, "hostname", "username", " \"\\", NULL, false);
     ASSERT_NTH_ENTRY(17, "hostname", "username", "\"\\", NULL, false);
-
 }
 END_TEST
 
