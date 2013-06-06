@@ -41,4 +41,10 @@ AC_ARG_ENABLE([debug],
   [enable_debug="no"])
 AM_CONDITIONAL(DEBUG, [test x$enable_debug = xyes])
 
+AC_CHECK_PROG([have_lcov], [lcov], [yes])
+AM_CONDITIONAL(HAVE_LCOV, [test x$have_lcov = xyes])
+
+AC_CHECK_PROG([have_xdg_open], [xdg-open], [yes])
+AM_CONDITIONAL(HAVE_XDG_OPEN, [test x$have_xdg_open = xyes])
+
 AC_OUTPUT

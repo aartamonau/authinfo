@@ -32,3 +32,5 @@
 *.gcno
 *.gcda
 *.gcov
+lcov.info
+/lcov/
