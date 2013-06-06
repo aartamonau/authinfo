@@ -29,3 +29,6 @@
 /GPATH
 /GRTAGS
 /GTAGS
+*.gcno
+*.gcda
+*.gcov
