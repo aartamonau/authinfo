@@ -7,6 +7,8 @@ endif
 AM_CFLAGS = $(GCC_CFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/include/ $(DEBUG_CPPFLAGS)
 
+noinst_DATA = $(top_srcdir)/config.site/coverage
+
 noinst_HEADERS = $(top_srcdir)/include/authinfo_internal.h
 include_HEADERS = $(top_srcdir)/include/authinfo.h
 
