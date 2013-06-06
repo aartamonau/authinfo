@@ -4,7 +4,7 @@ if DEBUG
 DEBUG_CPPFLAGS = -DDEBUG
 endif
 
-AM_CFLAGS = $(VISIBILITY) -Wall -Werror
+AM_CFLAGS = $(GCC_CFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/include/ $(DEBUG_CPPFLAGS)
 
 noinst_HEADERS = $(top_srcdir)/include/authinfo_internal.h
