@@ -187,7 +187,7 @@ teardown(void)
     if ((x) != NULL && (y) != NULL) { \
         ck_assert_str_eq((x), (y)); \
     } else { \
-        ck_assert_ptr_eq((x), (y)); \
+        ck_assert_ptr_eq((void *)(x), (void *)(y)); \
     }
 
 #define ASSERT_ENTRY(entry, host_, user_, password_, protocol_, force_) \
