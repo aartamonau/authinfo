@@ -18,15 +18,12 @@
 #include "authinfo_internal.h"
 
 #define DOT "."
-#define AUTHINFO "authinfo"
-#define DOT_AUTHINFO (DOT AUTHINFO)
-#define NETRC "netrc"
-#define DOT_NETRC (DOT NETRC)
 
 #define TOKEN_SIZE_MAX 128
 
 /* internal macros */
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
 /* internal macros end */
 
 /* internal functions prototypes */
@@ -35,6 +32,10 @@ static enum authinfo_result_t authinfo_errno2result(int errnum);
 static char *authinfo_path_join(const char *dir, const char *name);
 
 static enum authinfo_result_t authinfo_path_probe(const char *path);
+
+static enum authinfo_result_t
+authinfo_find_files_in_dir(const char *dir,
+                           const char **name, size_t count, char **pathp);
 
 static enum authinfo_result_t
 authinfo_find_file_in_dir(const char *dir, const char *name, char **pathp);
@@ -101,24 +102,24 @@ authinfo_find_file(char **path)
 
     home = getenv("HOME");
     if (home) {
-        ret = authinfo_find_file_in_dir(home, DOT_AUTHINFO, path);
-        if (ret != AUTHINFO_ENOENT) {
-            /* we either successfully found the file or got some error */
-            return ret;
-        }
+        const char *names[] = { DOT "authinfo.gpg",
+                                DOT "authinfo",
+                                DOT "netrc.gpg",
+                                DOT "netrc" };
 
-        ret = authinfo_find_file_in_dir(home, DOT_NETRC, path);
+        ret = authinfo_find_files_in_dir(home, names, ARRAY_SIZE(names), path);
         if (ret != AUTHINFO_ENOENT) {
             return ret;
         }
     }
 
-    ret = authinfo_find_file_in_dir(SYSCONF_DIR, AUTHINFO, path);
-    if (ret != AUTHINFO_ENOENT) {
-        return ret;
-    }
+    const char *names[] = { "authinfo.gpg",
+                            "authinfo",
+                            "netrc.gpg",
+                            "netrc" };
 
-    return authinfo_find_file_in_dir(SYSCONF_DIR, NETRC, path);
+    return authinfo_find_files_in_dir(SYSCONF_DIR, names,
+                                      ARRAY_SIZE(names), path);
 }
 
 enum authinfo_result_t
@@ -461,6 +462,22 @@ authinfo_path_join(const char *dir, const char *name)
 
     snprintf(path, length, "%s/%s", dir, name);
     return path;
+}
+
+static enum authinfo_result_t
+authinfo_find_files_in_dir(const char *dir,
+                           const char **names, size_t count, char **path)
+{
+    enum authinfo_result_t ret;
+
+    for (int i = 0; i < count; ++i) {
+        ret = authinfo_find_file_in_dir(dir, names[i], path);
+        if (ret != AUTHINFO_ENOENT) {
+            break;
+        }
+    }
+
+    return ret;
 }
 
 static enum authinfo_result_t
