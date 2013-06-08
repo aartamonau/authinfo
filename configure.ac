@@ -37,7 +37,7 @@ AM_CONDITIONAL(HAVE_CHECK, [test x$have_check = xyes])
 AC_ARG_ENABLE([debug],
   [AS_HELP_STRING([--enable-debug],
           [Enable debug build. @<:@default=off@:>@])],
-  [enable_debug="yes"],
+  [enable_debug="$enableval"],
   [enable_debug="no"])
 AM_CONDITIONAL(DEBUG, [test x$enable_debug = xyes])
 
