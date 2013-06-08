@@ -29,6 +29,7 @@ enum authinfo_result_t {
     AUTHINFO_ETOOBIG,           /**< Authinfo file is too big. */
     AUTHINFO_EUNKNOWN,          /**< Some unexpected condition happened. */
     AUTHINFO_EGPGME,            /**< Generic GPGME error. */
+    AUTHINFO_ENOGPGME,          /**< Library compiled without GPG support */
     AUTHINFO_RESULT_MAX
 };
 

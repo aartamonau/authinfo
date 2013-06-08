@@ -38,6 +38,8 @@
 static enum authinfo_result_t authinfo_gpgme_init(void);
 #endif  /* HAVE_GPGME */
 
+static bool authinfo_is_gpged_file(const char *path);
+
 static enum authinfo_result_t authinfo_errno2result(int errnum);
 
 static char *authinfo_path_join(const char *dir, const char *name);
@@ -50,6 +52,9 @@ authinfo_find_files_in_dir(const char *dir,
 
 static enum authinfo_result_t
 authinfo_find_file_in_dir(const char *dir, const char *name, char **pathp);
+
+static enum authinfo_result_t
+authinfo_do_read_file(const char *path, char *buffer, size_t size);
 
 static void authinfo_skip_spaces(const char **str, unsigned int *column);
 
@@ -104,6 +109,7 @@ static const char *authinfo_result2str[] = {
     [AUTHINFO_ETOOBIG] = "Authinfo file is too big",
     [AUTHINFO_EUNKNOWN] = "Unknown error happened",
     [AUTHINFO_EGPGME] = "GPGME error",
+    [AUTHINFO_ENOGPGME] = "Library built without GPG support"
 };
 
 const char *
@@ -147,48 +153,22 @@ authinfo_find_file(char **path)
 enum authinfo_result_t
 authinfo_read_file(const char *path, char *buffer, size_t size)
 {
-    int fd;
+    enum authinfo_result_t ret;
 
-    while (true) {
-        fd = open(path, O_RDONLY);
-        if (fd != -1) {
-            break;
-        }
-
-        if (errno == EINTR) {
-            continue;
-        } else {
-            TRACE("Could not open authinfo file: %s\n", strerror(errno));
-            return authinfo_errno2result(errno);
-        }
+    ret = authinfo_do_read_file(path, buffer, size);
+    if (ret != AUTHINFO_OK) {
+        return ret;
     }
 
-    while (true) {
-        ssize_t nread;
-
-        if (size == 0) {
-            return AUTHINFO_ETOOBIG;
-        }
-
-        nread = read(fd, buffer, MIN(size, 0xffff));
-        if (nread == -1) {
-            if (errno == EINTR) {
-                continue;
-            } else {
-                TRACE("Could not read authinfo file: %s\n", strerror(errno));
-                return authinfo_errno2result(errno);
-            }
-        } else if (nread == 0) {
-            assert(size != 0);
-            *buffer = '\0';
-            return AUTHINFO_OK;
-        }
-
-        assert(size >= nread);
-
-        size -= nread;
-        buffer += nread;
+    if (authinfo_is_gpged_file(path)) {
+#ifdef HAVE_GPGME
+        assert(!"not implemented");
+#else
+        ret = AUTHINFO_ENOGPGME;
+#endif  /* HAVE_GPGME */
     }
+
+    return ret;
 }
 
 enum parse_state_t {
@@ -492,6 +472,21 @@ authinfo_gpgme_init(void)
 
 #endif  /* HAVE_GPGME */
 
+static bool authinfo_is_gpged_file(const char *path)
+{
+    const char *ext = ".gpg";
+    size_t extlen = strlen(ext);
+
+    size_t n = strlen(path);
+
+    if (n < extlen) {
+        return false;
+    }
+
+    path += n - extlen;
+    return (strcasecmp(path, ext) == 0);
+}
+
 static enum authinfo_result_t
 authinfo_errno2result(int errnum)
 {
@@ -580,6 +575,53 @@ authinfo_path_probe(const char *path)
     }
 
     return ret;
+}
+
+static enum authinfo_result_t
+authinfo_do_read_file(const char *path, char *buffer, size_t size)
+{
+    int fd;
+
+    while (true) {
+        fd = open(path, O_RDONLY);
+        if (fd != -1) {
+            break;
+        }
+
+        if (errno == EINTR) {
+            continue;
+        } else {
+            TRACE("Could not open authinfo file: %s\n", strerror(errno));
+            return authinfo_errno2result(errno);
+        }
+    }
+
+    while (true) {
+        ssize_t nread;
+
+        if (size == 0) {
+            return AUTHINFO_ETOOBIG;
+        }
+
+        nread = read(fd, buffer, MIN(size, 0xffff));
+        if (nread == -1) {
+            if (errno == EINTR) {
+                continue;
+            } else {
+                TRACE("Could not read authinfo file: %s\n", strerror(errno));
+                return authinfo_errno2result(errno);
+            }
+        } else if (nread == 0) {
+            assert(size != 0);
+            *buffer = '\0';
+            return AUTHINFO_OK;
+        }
+
+        assert(size >= nread);
+
+        size -= nread;
+        buffer += nread;
+    }
 }
 
 static void
