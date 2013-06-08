@@ -154,6 +154,8 @@ setup(void)
     entries_count = 0;
     errors_start = 0;
     errors_count = 0;
+
+    assert(authinfo_init() == AUTHINFO_OK);
 }
 
 static void

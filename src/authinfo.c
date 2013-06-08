@@ -17,6 +17,7 @@
 #include <assert.h>
 
 #ifdef HAVE_GPGME
+#include <locale.h>
 #include <gpgme.h>
 #endif
 
@@ -33,6 +34,10 @@
 /* internal macros end */
 
 /* internal functions prototypes */
+#ifdef HAVE_GPGME
+static enum authinfo_result_t authinfo_gpgme_init(void);
+#endif  /* HAVE_GPGME */
+
 static enum authinfo_result_t authinfo_errno2result(int errnum);
 
 static char *authinfo_path_join(const char *dir, const char *name);
@@ -81,6 +86,16 @@ authinfo_quoted_token(const char **str, unsigned int *column, char *token,
                       struct authinfo_parse_error_t *error);
 /* internal functions prototypes end */
 
+enum authinfo_result_t
+authinfo_init(void)
+{
+#ifdef HAVE_GPGME
+    return authinfo_gpgme_init();
+#else
+    return AUTHINFO_OK;
+#endif  /* HAVE_GPGME */
+}
+
 static const char *authinfo_result2str[] = {
     [AUTHINFO_OK] = "Success",
     [AUTHINFO_EACCESS] = "Permission denied",
@@ -88,6 +103,7 @@ static const char *authinfo_result2str[] = {
     [AUTHINFO_ENOMEM] = "Could not allocate memory",
     [AUTHINFO_ETOOBIG] = "Authinfo file is too big",
     [AUTHINFO_EUNKNOWN] = "Unknown error happened",
+    [AUTHINFO_EGPGME] = "GPGME error",
 };
 
 const char *
@@ -430,6 +446,52 @@ authinfo_parse_strerror(enum authinfo_parse_error_type_t error)
 }
 
 /* internal */
+
+#ifdef HAVE_GPGME
+
+static enum authinfo_result_t
+authinfo_gpgme_init(void)
+{
+    gpgme_error_t ret;
+
+    if (setlocale(LC_ALL, "") == NULL) {
+        return AUTHINFO_EUNKNOWN;
+    }
+
+    gpgme_check_version(NULL);
+
+    ret = gpgme_set_locale(NULL, LC_CTYPE, setlocale(LC_CTYPE, NULL));
+    if (ret != GPG_ERR_NO_ERROR) {
+#ifdef DEBUG
+        char buf[128];
+
+        gpgme_strerror_r(ret, buf, sizeof(buf));
+        TRACE("Couldn't set GPGME locale: %s\n", buf);
+#endif  /* DEBUG */
+
+        return AUTHINFO_EGPGME;
+    }
+
+#ifdef LC_MESSAGES
+    ret = gpgme_set_locale(NULL, LC_MESSAGES, setlocale(LC_MESSAGES, NULL));
+    if (ret != GPG_ERR_NO_ERROR) {
+#ifdef DEBUG
+        char buf[128];
+
+        gpgme_strerror_r(ret, buf, sizeof(buf));
+        TRACE("Couldn't set GPGME locale: %s\n", buf);
+#endif  /* DEBUG */
+
+        return AUTHINFO_EGPGME;
+    }
+
+#endif  /* LC_MESSAGES */
+
+    return AUTHINFO_OK;
+}
+
+#endif  /* HAVE_GPGME */
+
 static enum authinfo_result_t
 authinfo_errno2result(int errnum)
 {

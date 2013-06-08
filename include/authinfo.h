@@ -28,8 +28,18 @@ enum authinfo_result_t {
     AUTHINFO_ENOMEM,            /**< Not enough memory. */
     AUTHINFO_ETOOBIG,           /**< Authinfo file is too big. */
     AUTHINFO_EUNKNOWN,          /**< Some unexpected condition happened. */
+    AUTHINFO_EGPGME,            /**< Generic GPGME error. */
     AUTHINFO_RESULT_MAX
 };
+
+/**
+ * Initialize authinfo library. Should be called before any other function in
+ * the library. And if your program is multithreaded, it must be called in a
+ * single thread.
+ *
+ * @return result
+ */
+EXPORT_FUNCTION enum authinfo_result_t authinfo_init(void);
 
 /**
  * Return a human readable description for a status code.

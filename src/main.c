@@ -50,6 +50,13 @@ main(void)
     char *authinfo_path;
     int ret;
 
+    ret = authinfo_init();
+    if (ret != AUTHINFO_OK) {
+        printf("Couldn't initialize authinfo library: %s\n",
+               authinfo_strerror(ret));
+        return EXIT_FAILURE;
+    }
+
     ret = authinfo_find_file(&authinfo_path);
     switch (ret) {
     case AUTHINFO_OK:
