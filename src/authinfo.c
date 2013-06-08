@@ -31,6 +31,17 @@
 /* internal macros */
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
+
+#ifdef DEBUG
+#define TRACE_GPGME_ERROR(msg, error) \
+    do { \
+        char buf[128]; \
+        gpgme_strerror_r(error, buf, sizeof(buf)); \
+        TRACE("%s: %s: %s\n", msg, gpgme_strsource(error), buf); \
+    } while (0);
+#else
+#define TRACE_GPGME_ERROR(msg, error)
+#endif  /* DEBUG */
 /* internal macros end */
 
 /* internal functions prototypes */
@@ -442,26 +453,14 @@ authinfo_gpgme_init(void)
 
     ret = gpgme_set_locale(NULL, LC_CTYPE, setlocale(LC_CTYPE, NULL));
     if (ret != GPG_ERR_NO_ERROR) {
-#ifdef DEBUG
-        char buf[128];
-
-        gpgme_strerror_r(ret, buf, sizeof(buf));
-        TRACE("Couldn't set GPGME locale: %s\n", buf);
-#endif  /* DEBUG */
-
+        TRACE_GPGME_ERROR("Couldn't set GPGME locale", ret);
         return AUTHINFO_EGPGME;
     }
 
 #ifdef LC_MESSAGES
     ret = gpgme_set_locale(NULL, LC_MESSAGES, setlocale(LC_MESSAGES, NULL));
     if (ret != GPG_ERR_NO_ERROR) {
-#ifdef DEBUG
-        char buf[128];
-
-        gpgme_strerror_r(ret, buf, sizeof(buf));
-        TRACE("Couldn't set GPGME locale: %s\n", buf);
-#endif  /* DEBUG */
-
+        TRACE_GPGME_ERROR("Couldn't set GPGME locale", ret);
         return AUTHINFO_EGPGME;
     }
 
