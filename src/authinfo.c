@@ -474,7 +474,7 @@ static enum authinfo_result_t
 authinfo_find_files_in_dir(const char *dir,
                            const char **names, size_t count, char **path)
 {
-    enum authinfo_result_t ret;
+    enum authinfo_result_t ret = AUTHINFO_ENOENT;
 
     for (int i = 0; i < count; ++i) {
         ret = authinfo_find_file_in_dir(dir, names[i], path);
