@@ -47,6 +47,8 @@
 /* internal functions prototypes */
 #ifdef HAVE_GPGME
 static enum authinfo_result_t authinfo_gpgme_init(void);
+
+static enum authinfo_result_t authinfo_gpgme_decrypt(char *buf, size_t size);
 #endif  /* HAVE_GPGME */
 
 static bool authinfo_is_gpged_file(const char *path);
@@ -173,7 +175,7 @@ authinfo_read_file(const char *path, char *buffer, size_t size)
 
     if (authinfo_is_gpged_file(path)) {
 #ifdef HAVE_GPGME
-        assert(!"not implemented");
+        ret = authinfo_gpgme_decrypt(buffer, size);
 #else
         ret = AUTHINFO_ENOGPGME;
 #endif  /* HAVE_GPGME */
@@ -467,6 +469,66 @@ authinfo_gpgme_init(void)
 #endif  /* LC_MESSAGES */
 
     return AUTHINFO_OK;
+}
+
+static enum authinfo_result_t
+authinfo_gpgme_decrypt(char *buf, size_t size)
+{
+    gpgme_error_t gpgme_ret;
+    gpgme_ctx_t ctx;
+    gpgme_data_t cipher;
+    gpgme_data_t plain;
+    char *plain_data;
+    size_t plain_length;
+
+    enum authinfo_result_t ret = AUTHINFO_OK;
+
+    gpgme_ret = gpgme_new(&ctx);
+    if (gpgme_ret != GPG_ERR_NO_ERROR) {
+        TRACE_GPGME_ERROR("Could not create GPGME context", gpgme_ret);
+        return AUTHINFO_EGPGME;
+    }
+
+    gpgme_ret = gpgme_data_new_from_mem(&cipher, buf, strlen(buf), 1);
+    if (gpgme_ret != GPG_ERR_NO_ERROR) {
+        TRACE_GPGME_ERROR("Could not create GPGME data buffer", gpgme_ret);
+        ret = AUTHINFO_EGPGME;
+        goto gpgme_decrypt_release_ctx;
+    }
+
+    gpgme_ret = gpgme_data_new(&plain);
+    if (gpgme_ret != GPG_ERR_NO_ERROR) {
+        TRACE_GPGME_ERROR("Could not create GPGME data buffer", gpgme_ret);
+        ret = AUTHINFO_EGPGME;
+        goto gpgme_decrypt_release_cipher;
+    }
+
+    gpgme_ret = gpgme_op_decrypt(ctx, cipher, plain);
+    if (gpgme_ret != GPG_ERR_NO_ERROR) {
+        TRACE_GPGME_ERROR("Could not decrypt cipher text", gpgme_ret);
+        ret = AUTHINFO_EGPGME;
+        goto gpgme_decrypt_release_plain;
+    }
+
+    plain_data = gpgme_data_release_and_get_mem(plain, &plain_length);
+    if (plain_length >= size) {
+        ret = AUTHINFO_ETOOBIG;
+    } else {
+        memcpy(buf, plain_data, plain_length);
+        buf[plain_length] = '\0';
+    }
+
+    gpgme_free(plain_data);
+    goto gpgme_decrypt_release_cipher;
+
+gpgme_decrypt_release_plain:
+    gpgme_data_release(plain);
+gpgme_decrypt_release_cipher:
+    gpgme_data_release(cipher);
+gpgme_decrypt_release_ctx:
+    gpgme_release(ctx);
+
+    return ret;
 }
 
 #endif  /* HAVE_GPGME */
