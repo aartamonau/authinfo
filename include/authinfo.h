@@ -26,7 +26,7 @@ enum authinfo_result_t {
     AUTHINFO_EACCESS,           /**< Couldn't access some path. */
     AUTHINFO_ENOENT,            /**< Path does not exist.  */
     AUTHINFO_ENOMEM,            /**< Not enough memory. */
-    AUTHINFO_TOOBIG,            /**< Authinfo file is too big. */
+    AUTHINFO_ETOOBIG,           /**< Authinfo file is too big. */
     AUTHINFO_EUNKNOWN,          /**< Some unexpected condition happened. */
     AUTHINFO_RESULT_MAX
 };

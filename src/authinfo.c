@@ -86,7 +86,7 @@ static const char *authinfo_result2str[] = {
     [AUTHINFO_EACCESS] = "Permission denied",
     [AUTHINFO_ENOENT] = "File or directory not found",
     [AUTHINFO_ENOMEM] = "Could not allocate memory",
-    [AUTHINFO_TOOBIG] = "Authinfo file is too big",
+    [AUTHINFO_ETOOBIG] = "Authinfo file is too big",
     [AUTHINFO_EUNKNOWN] = "Unknown error happened",
 };
 
@@ -151,7 +151,7 @@ authinfo_read_file(const char *path, char *buffer, size_t size)
         ssize_t nread;
 
         if (size == 0) {
-            return AUTHINFO_TOOBIG;
+            return AUTHINFO_ETOOBIG;
         }
 
         nread = read(fd, buffer, MIN(size, 0xffff));
