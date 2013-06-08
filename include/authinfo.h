@@ -13,7 +13,12 @@
 #define _AUTHINFO_H_
 
 #include <stdbool.h>
-#include "config.h"
+
+#ifdef __GNUC__
+#define EXPORT_FUNCTION __attribute__((visibility("default")))
+#else
+#define EXPORT_FUNCTION
+#endif
 
 /// Indicates if certain call completed successfully
 enum authinfo_result_t {

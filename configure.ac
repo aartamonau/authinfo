@@ -19,12 +19,9 @@ AC_CHECK_DECL([__GNUC__], [GCC=yes], [GCC=no])
 
 if test "x${GCC}" = xyes; then
   GCC_CFLAGS="-fvisibility=hidden -Wall -Werror"
-  EXPORT_FUNCTION="__attribute__((visibility(\"default\")))"
 fi
 
 AC_SUBST(GCC_CFLAGS, ${GCC_CFLAGS})
-AC_DEFINE_UNQUOTED(EXPORT_FUNCTION, [${EXPORT_FUNCTION}],
-  [How to declare exported function.])
 
 AC_DEFINE_DIR(SYSCONF_DIR, sysconfdir,
   [System configuration directory (typically /etc).])
