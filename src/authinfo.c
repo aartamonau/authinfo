@@ -25,7 +25,7 @@
 #include "authinfo_internal.h"
 
 #define DOT "."
-
+#define GPG_EXT ".gpg"
 #define TOKEN_SIZE_MAX 128
 
 /* internal macros */
@@ -143,9 +143,7 @@ authinfo_find_file(char **path)
 
     home = getenv("HOME");
     if (home) {
-        const char *names[] = { DOT "authinfo.gpg",
-                                DOT "authinfo",
-                                DOT "netrc.gpg",
+        const char *names[] = { DOT "authinfo",
                                 DOT "netrc" };
 
         ret = authinfo_find_files_in_dir(home, names, ARRAY_SIZE(names), path);
@@ -154,9 +152,7 @@ authinfo_find_file(char **path)
         }
     }
 
-    const char *names[] = { "authinfo.gpg",
-                            "authinfo",
-                            "netrc.gpg",
+    const char *names[] = { "authinfo",
                             "netrc" };
 
     return authinfo_find_files_in_dir(SYSCONF_DIR, names,
@@ -535,9 +531,7 @@ gpgme_decrypt_release_ctx:
 
 static bool authinfo_is_gpged_file(const char *path)
 {
-    const char *ext = ".gpg";
-    size_t extlen = strlen(ext);
-
+    size_t extlen = strlen(GPG_EXT);
     size_t n = strlen(path);
 
     if (n < extlen) {
@@ -545,7 +539,7 @@ static bool authinfo_is_gpged_file(const char *path)
     }
 
     path += n - extlen;
-    return (strcasecmp(path, ext) == 0);
+    return (strcasecmp(path, GPG_EXT) == 0);
 }
 
 static enum authinfo_result_t
@@ -595,7 +589,23 @@ authinfo_find_files_in_dir(const char *dir,
     enum authinfo_result_t ret = AUTHINFO_ENOENT;
 
     for (int i = 0; i < count; ++i) {
-        ret = authinfo_find_file_in_dir(dir, names[i], path);
+        const char *name = names[i];
+
+#ifdef HAVE_GPGME
+        /* probe GPGed file first */
+        size_t name_length = strlen(name);
+        char gpged_name[name_length + strlen(GPG_EXT) + 1];
+
+        memcpy(gpged_name, name, name_length);
+        strcpy(gpged_name + name_length, GPG_EXT);
+
+        ret = authinfo_find_file_in_dir(dir, gpged_name, path);
+        if (ret != AUTHINFO_ENOENT) {
+            break;
+        }
+#endif  /* HAVE_GPGME */
+
+        ret = authinfo_find_file_in_dir(dir, name, path);
         if (ret != AUTHINFO_ENOENT) {
             break;
         }
