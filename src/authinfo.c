@@ -14,6 +14,10 @@
 #include <fcntl.h>
 #include <assert.h>
 
+#ifdef HAVE_GPGME
+#include <gpgme.h>
+#endif
+
 #include "authinfo.h"
 #include "authinfo_internal.h"
 

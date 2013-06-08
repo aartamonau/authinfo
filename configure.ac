@@ -47,4 +47,24 @@ AM_CONDITIONAL(HAVE_LCOV, [test x$have_lcov = xyes])
 AC_CHECK_PROG([have_xdg_open], [xdg-open], [yes])
 AM_CONDITIONAL(HAVE_XDG_OPEN, [test x$have_xdg_open = xyes])
 
+AC_ARG_ENABLE([gpg],
+  [AS_HELP_STRING([--enable-gpg],
+          [Enable gpg support. @<:@default=on@:>@])],
+  [enable_gpg="$enableval"],
+  [enable_gpg="yes"])
+
+if test x$enable_gpg = xyes; then
+dnl TODO: refine version restriction
+   AM_PATH_GPGME_PTHREAD([1.4.0], [have_gpgme=yes], [have_gpgme=no])
+
+   if test x$have_gpgme = xno; then
+      AC_MSG_WARN(
+        [GPGME library has not been found. GPG support will be disabled])
+   fi
+fi
+
+if test x$have_gpgme = xyes; then
+   AC_DEFINE([HAVE_GPGME], [1], [Define to 1 if you want GPG support])
+fi
+
 AC_OUTPUT
