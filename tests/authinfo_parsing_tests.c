@@ -8,9 +8,17 @@
 
 #define ITEMS_MAX 50
 
+struct entry_t {
+    char *host;
+    char *protocol;
+    char *user;
+    char *password;
+    bool force;
+};
+
 static int entries_start;
 static int entries_count;
-static struct authinfo_parse_entry_t entries[ITEMS_MAX];
+static struct entry_t entries[ITEMS_MAX];
 
 static int errors_start;
 static int errors_count;
@@ -38,18 +46,29 @@ xfree(void *p)
 }
 
 static void
-copy_entry(struct authinfo_parse_entry_t *dst,
+copy_entry(struct entry_t *dst,
            const struct authinfo_parse_entry_t *src)
 {
     dst->host = xstrdup(src->host);
     dst->protocol = xstrdup(src->protocol);
     dst->user = xstrdup(src->user);
-    dst->password = xstrdup(src->password);
     dst->force = src->force;
+
+    if (src->password) {
+        enum authinfo_result_t ret;
+        const char *pwdata;
+
+        ret = authinfo_password_extract(src->password, &pwdata);
+        assert(ret == AUTHINFO_OK);
+
+        dst->password = strdup(pwdata);
+    } else {
+        dst->password = NULL;
+    }
 }
 
 static void
-free_entry(struct authinfo_parse_entry_t *entry)
+free_entry(struct entry_t *entry)
 {
     xfree((void *) entry->host);
     xfree((void *) entry->protocol);
@@ -118,7 +137,7 @@ dump_entries(void)
     if (entries_count) {
         fprintf(stderr, "Parsed entries:\n");
         for (int i = entries_start; i < entries_count; ++i) {
-            struct authinfo_parse_entry_t *e = &entries[i];
+            struct entry_t *e = &entries[i];
 
             fprintf(stderr,
                     "\thost -> '%s', protocol -> '%s', "
