@@ -19,7 +19,6 @@
 /ltmain.sh
 /missing
 /authinfo
-/authinfo.lo
 /stamp-h1
 /compile
 /test-driver
@@ -34,3 +33,5 @@
 *.gcov
 lcov.info
 /lcov/
+*.o
+*.lo
