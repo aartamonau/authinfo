@@ -10,11 +10,13 @@ AM_LDFLAGS = $(GPGME_PTHREAD_LIBS)
 
 noinst_DATA = $(top_srcdir)/config.site/coverage
 
-noinst_HEADERS = $(top_srcdir)/include/authinfo_internal.h
+noinst_HEADERS = $(top_srcdir)/include/authinfo_internal.h \
+                 $(top_srcdir)/include/base64.h
 include_HEADERS = $(top_srcdir)/include/authinfo.h
 
 noinst_LTLIBRARIES = libauthinfo_impl.la
-libauthinfo_impl_la_SOURCES = $(top_srcdir)/src/authinfo.c
+libauthinfo_impl_la_SOURCES = $(top_srcdir)/src/authinfo.c \
+                              $(top_srcdir)/src/base64.c
 
 lib_LTLIBRARIES = libauthinfo.la
 libauthinfo_la_SOURCES =
