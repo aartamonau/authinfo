@@ -26,7 +26,7 @@
 
 #define DOT "."
 #define GPG_EXT ".gpg"
-#define TOKEN_SIZE_MAX 128
+#define TOKEN_SIZE_MAX 8192
 
 struct authinfo_password_t {
     char data[TOKEN_SIZE_MAX];
