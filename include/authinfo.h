@@ -72,12 +72,15 @@ EXPORT_FUNCTION enum authinfo_result_t authinfo_find_file(char **path);
 EXPORT_FUNCTION enum authinfo_result_t
 authinfo_read_file(const char *path, char *buffer, size_t size);
 
+/// Opaque representation of a password.
+struct authinfo_password_t;
+
 /// Represents an entry in authinfo file.
 struct authinfo_parse_entry_t {
     const char *host;           /**< Host. Empty for the "default" entry. */
     const char *protocol;       /**< Protocol. NULL if omitted. */
     const char *user;           /**< User. NULL if omitted. */
-    const char *password;       /**< Password. NULL if omitted. */
+    struct authinfo_password_t *password; /**< Password. NULL if omitted. */
     bool force;                 /**< Force. 'false' by default. */
 };
 
@@ -138,5 +141,19 @@ typedef bool
 EXPORT_FUNCTION void authinfo_parse(const char *data, void *arg,
                                     authinfo_parse_entry_cb_t entry_callback,
                                     authinfo_parse_error_cb_t error_callback);
+
+/**
+ * Extracts a password from #authinfo_password_t structure. Extracted password
+ * is returned in @em data. Note that it is valid only during entry callback
+ * execution. It should be copied, if longer lifetime is required.
+ *
+ * @param password #authinfo_password_t structure to extract password from
+ * @param[out] data extracted password is returned here
+ *
+ * @return status
+ */
+EXPORT_FUNCTION enum authinfo_result_t
+authinfo_password_extract(struct authinfo_password_t *password,
+                          const char **data);
 
 #endif /* _AUTHINFO_H_ */

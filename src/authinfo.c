@@ -28,6 +28,11 @@
 #define GPG_EXT ".gpg"
 #define TOKEN_SIZE_MAX 128
 
+struct authinfo_password_t {
+    char data[TOKEN_SIZE_MAX];
+    bool encrypted;
+};
+
 /* internal macros */
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
@@ -225,7 +230,7 @@ authinfo_parse(const char *data, void *arg,
     char host[TOKEN_SIZE_MAX];
     char protocol[TOKEN_SIZE_MAX];
     char user[TOKEN_SIZE_MAX];
-    char password[TOKEN_SIZE_MAX];
+    struct authinfo_password_t password;
 
     struct authinfo_parse_entry_t entry;
 
@@ -387,7 +392,11 @@ authinfo_parse(const char *data, void *arg,
                     ASSIGN(user);
                     break;
                 case WAITING_PASSWORD:
-                    ASSIGN(password);
+                    if (entry.password == NULL) {
+                        strcpy(password.data, token);
+                        password.encrypted = false;
+                        entry.password = &password;
+                    }
                     break;
                 default:
                     /* should not happen */
@@ -432,6 +441,21 @@ authinfo_parse_strerror(enum authinfo_parse_error_type_t error)
     } else {
         return authinfo_parse_error_type2str[error];
     }
+}
+
+enum authinfo_result_t
+authinfo_password_extract(struct authinfo_password_t *password,
+                          const char **data)
+{
+    enum authinfo_result_t ret = AUTHINFO_OK;
+
+    if (password->encrypted) {
+        assert(!"not implemented");
+    } else {
+        *data = password->data;
+    }
+
+    return ret;
 }
 
 /* internal */
@@ -803,8 +827,10 @@ authinfo_report_entry(authinfo_parse_entry_cb_t entry_callback,
 
     stop = (*entry_callback)(entry, arg);
     TRACE("Reported an entry: host -> %s, protocol -> %s, "
-          "user -> %s, password -> %s, force -> %d => %s\n",
-          entry->host, entry->protocol, entry->user, entry->password,
+          "user -> %s, password (%s) -> %s, force -> %d => %s\n",
+          entry->host, entry->protocol, entry->user,
+          entry->password->encrypted ? "encrypted" : "plain text",
+          entry->password->data,
           (int) entry->force,
           stop ? "stopping" : "continuing");
 

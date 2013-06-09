@@ -7,8 +7,22 @@
 static bool
 entry_callback(const struct authinfo_parse_entry_t *entry, void *arg)
 {
+    const char *password;
+    enum authinfo_result_t ret;
+
+    if (entry->password != NULL) {
+        ret = authinfo_password_extract(entry->password, &password);
+        if (ret != AUTHINFO_OK) {
+            printf("Could not extract password from entry: %s\n",
+                   authinfo_strerror(ret));
+            password = NULL;
+        }
+    } else {
+        password = NULL;
+    }
+
     printf("Entry: host %s, protocol %s, user %s, password %s, force %s\n",
-           entry->host, entry->protocol, entry->user, entry->password,
+           entry->host, entry->protocol, entry->user, password,
            (entry->force ? "true" : "false"));
     /* don't stop */
     return false;
