@@ -19,6 +19,7 @@
 #ifdef HAVE_GPGME
 #include <locale.h>
 #include <gpgme.h>
+#include "base64.h"
 #endif
 
 #include "authinfo.h"
@@ -26,6 +27,7 @@
 
 #define DOT "."
 #define GPG_EXT ".gpg"
+#define GPG_PREFIX "gpg:"
 #define TOKEN_SIZE_MAX 8192
 
 struct authinfo_password_t {
@@ -59,6 +61,8 @@ authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size,
 #endif  /* HAVE_GPGME */
 
 static bool authinfo_is_gpged_file(const char *path);
+
+static bool authinfo_is_gpged_password(const char *password);
 
 static enum authinfo_result_t authinfo_errno2result(int errnum);
 
@@ -406,7 +410,7 @@ authinfo_parse(const char *data, void *arg,
                 case WAITING_PASSWORD:
                     if (entry.password == NULL) {
                         strcpy(password.data, token);
-                        password.encrypted = false;
+                        password.encrypted = authinfo_is_gpged_password(token);
                         entry.password = &password;
                     }
                     break;
@@ -462,8 +466,41 @@ authinfo_password_extract(struct authinfo_password_t *password,
     enum authinfo_result_t ret = AUTHINFO_OK;
 
     if (password->encrypted) {
-        assert(!"not implemented");
-    } else {
+#ifdef HAVE_GPGME
+        int n;
+        size_t password_length = strlen(password->data) - strlen(GPG_PREFIX);
+        char b64_password[password_length + 1];
+        char raw_password[TOKEN_SIZE_MAX];
+
+        assert(password_length < TOKEN_SIZE_MAX);
+
+        strcpy(b64_password, password->data + strlen(GPG_PREFIX));
+        n = base64_decode((uint8_t *) raw_password,
+                          b64_password, TOKEN_SIZE_MAX);
+        if (n == -1) {
+            /* TODO: better error */
+            ret = AUTHINFO_EGPGME;
+        } else {
+            size_t data_length = n;
+
+            assert(data_length < password_length);
+            ret = authinfo_gpgme_decrypt(raw_password, &data_length,
+                                         TOKEN_SIZE_MAX - 1,
+                                         GPGME_DATA_ENCODING_NONE);
+            if (ret == AUTHINFO_OK) {
+                assert(data_length < TOKEN_SIZE_MAX);
+
+                memcpy(password->data, raw_password, data_length);
+                password->data[data_length] = '\0';
+                password->encrypted = false; /* in case we are called again */
+            }
+        }
+#else
+        ret = AUTHINFO_ENOGPGME;
+#endif
+    }
+
+    if (ret == AUTHINFO_OK) {
         *data = password->data;
     }
 
@@ -585,6 +622,12 @@ authinfo_is_gpged_file(const char *path)
 
     path += n - extlen;
     return (strcasecmp(path, GPG_EXT) == 0);
+}
+
+static bool
+authinfo_is_gpged_password(const char *password)
+{
+    return (strncmp(password, GPG_PREFIX, strlen(GPG_PREFIX)) == 0);
 }
 
 static enum authinfo_result_t
