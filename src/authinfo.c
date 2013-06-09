@@ -53,7 +53,8 @@ struct authinfo_password_t {
 #ifdef HAVE_GPGME
 static enum authinfo_result_t authinfo_gpgme_init(void);
 
-static enum authinfo_result_t authinfo_gpgme_decrypt(char *buf, size_t size);
+static enum authinfo_result_t
+authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size);
 #endif  /* HAVE_GPGME */
 
 static bool authinfo_is_gpged_file(const char *path);
@@ -72,7 +73,8 @@ static enum authinfo_result_t
 authinfo_find_file_in_dir(const char *dir, const char *name, char **pathp);
 
 static enum authinfo_result_t
-authinfo_do_read_file(const char *path, char *buffer, size_t size);
+authinfo_do_read_file(const char *path, char *buffer,
+                      size_t buffer_size, size_t *data_size);
 
 static void authinfo_skip_spaces(const char **str, unsigned int *column);
 
@@ -168,18 +170,26 @@ enum authinfo_result_t
 authinfo_read_file(const char *path, char *buffer, size_t size)
 {
     enum authinfo_result_t ret;
+    size_t data_size;
 
-    ret = authinfo_do_read_file(path, buffer, size);
+    ret = authinfo_do_read_file(path, buffer, size, &data_size);
     if (ret != AUTHINFO_OK) {
         return ret;
     }
 
     if (authinfo_is_gpged_file(path)) {
 #ifdef HAVE_GPGME
-        ret = authinfo_gpgme_decrypt(buffer, size);
+        assert(data_size < size);
+        /* we need to leave space for trailing zero thus (size - 1) */
+        ret = authinfo_gpgme_decrypt(buffer, &data_size, size - 1);
 #else
         ret = AUTHINFO_ENOGPGME;
 #endif  /* HAVE_GPGME */
+    }
+
+    if (ret == AUTHINFO_OK) {
+        assert(data_size < size);
+        buffer[data_size] = '\0';
     }
 
     return ret;
@@ -492,7 +502,7 @@ authinfo_gpgme_init(void)
 }
 
 static enum authinfo_result_t
-authinfo_gpgme_decrypt(char *buf, size_t size)
+authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size)
 {
     gpgme_error_t gpgme_ret;
     gpgme_ctx_t ctx;
@@ -509,7 +519,7 @@ authinfo_gpgme_decrypt(char *buf, size_t size)
         return AUTHINFO_EGPGME;
     }
 
-    gpgme_ret = gpgme_data_new_from_mem(&cipher, buf, strlen(buf), 1);
+    gpgme_ret = gpgme_data_new_from_mem(&cipher, buf, *data_size, 1);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
         TRACE_GPGME_ERROR("Could not create GPGME data buffer", gpgme_ret);
         ret = AUTHINFO_EGPGME;
@@ -531,11 +541,11 @@ authinfo_gpgme_decrypt(char *buf, size_t size)
     }
 
     plain_data = gpgme_data_release_and_get_mem(plain, &plain_length);
-    if (plain_length >= size) {
+    if (plain_length > buf_size) {
         ret = AUTHINFO_ETOOBIG;
     } else {
         memcpy(buf, plain_data, plain_length);
-        buf[plain_length] = '\0';
+        *data_size = plain_length;
     }
 
     gpgme_free(plain_data);
@@ -674,9 +684,11 @@ authinfo_path_probe(const char *path)
 }
 
 static enum authinfo_result_t
-authinfo_do_read_file(const char *path, char *buffer, size_t size)
+authinfo_do_read_file(const char *path, char *buffer,
+                      size_t buffer_size, size_t *data_size)
 {
     int fd;
+    char *buffer_start = buffer;
 
     while (true) {
         fd = open(path, O_RDONLY);
@@ -695,11 +707,12 @@ authinfo_do_read_file(const char *path, char *buffer, size_t size)
     while (true) {
         ssize_t nread;
 
-        if (size == 0) {
+        if (buffer_size == 0) {
+            /* we'll always live an extra byte for potential ending \0 */
             return AUTHINFO_ETOOBIG;
         }
 
-        nread = read(fd, buffer, MIN(size, 0xffff));
+        nread = read(fd, buffer, MIN(buffer_size, 0xffff));
         if (nread == -1) {
             if (errno == EINTR) {
                 continue;
@@ -708,14 +721,14 @@ authinfo_do_read_file(const char *path, char *buffer, size_t size)
                 return authinfo_errno2result(errno);
             }
         } else if (nread == 0) {
-            assert(size != 0);
-            *buffer = '\0';
+            assert(buffer_size != 0);
+            *data_size = buffer - buffer_start;
             return AUTHINFO_OK;
         }
 
-        assert(size >= nread);
+        assert(buffer_size >= nread);
 
-        size -= nread;
+        buffer_size -= nread;
         buffer += nread;
     }
 }
