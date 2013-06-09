@@ -54,7 +54,8 @@ struct authinfo_password_t {
 static enum authinfo_result_t authinfo_gpgme_init(void);
 
 static enum authinfo_result_t
-authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size);
+authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size,
+                       gpgme_data_encoding_t encoding);
 #endif  /* HAVE_GPGME */
 
 static bool authinfo_is_gpged_file(const char *path);
@@ -181,7 +182,8 @@ authinfo_read_file(const char *path, char *buffer, size_t size)
 #ifdef HAVE_GPGME
         assert(data_size < size);
         /* we need to leave space for trailing zero thus (size - 1) */
-        ret = authinfo_gpgme_decrypt(buffer, &data_size, size - 1);
+        ret = authinfo_gpgme_decrypt(buffer, &data_size, size - 1,
+                                     GPGME_DATA_ENCODING_NONE);
 #else
         ret = AUTHINFO_ENOGPGME;
 #endif  /* HAVE_GPGME */
@@ -502,7 +504,8 @@ authinfo_gpgme_init(void)
 }
 
 static enum authinfo_result_t
-authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size)
+authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size,
+                       gpgme_data_encoding_t encoding)
 {
     gpgme_error_t gpgme_ret;
     gpgme_ctx_t ctx;
@@ -524,6 +527,13 @@ authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size)
         TRACE_GPGME_ERROR("Could not create GPGME data buffer", gpgme_ret);
         ret = AUTHINFO_EGPGME;
         goto gpgme_decrypt_release_ctx;
+    }
+
+    gpgme_ret = gpgme_data_set_encoding(cipher, encoding);
+    if (gpgme_ret != GPG_ERR_NO_ERROR) {
+        TRACE_GPGME_ERROR("Could not set buffer data encoding", gpgme_ret);
+        ret = AUTHINFO_EGPGME;
+        goto gpgme_decrypt_release_cipher;
     }
 
     gpgme_ret = gpgme_data_new(&plain);
