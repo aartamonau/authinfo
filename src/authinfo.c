@@ -529,7 +529,8 @@ gpgme_decrypt_release_ctx:
 
 #endif  /* HAVE_GPGME */
 
-static bool authinfo_is_gpged_file(const char *path)
+static bool
+authinfo_is_gpged_file(const char *path)
 {
     size_t extlen = strlen(GPG_EXT);
     size_t n = strlen(path);
