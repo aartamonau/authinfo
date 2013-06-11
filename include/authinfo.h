@@ -20,6 +20,13 @@
 #define EXPORT_FUNCTION
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#if 0 /* just to make Emacs auto-indent happy */
+}
+#endif
+#endif  /* __cplusplus */
+
 /// Indicates if certain call completed successfully
 enum authinfo_result_t {
     AUTHINFO_OK,                /**< Everything went fine. */
@@ -158,5 +165,10 @@ EXPORT_FUNCTION void authinfo_parse(const char *data, void *arg,
 EXPORT_FUNCTION enum authinfo_result_t
 authinfo_password_extract(struct authinfo_password_t *password,
                           const char **data);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _AUTHINFO_H_ */
