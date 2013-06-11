@@ -139,6 +139,7 @@ static const char *authinfo_result2str[] = {
     [AUTHINFO_EGPGME] = "Unknown GPGME error",
     [AUTHINFO_EGPGME_DECRYPT_FAILED] = "Decryption failed",
     [AUTHINFO_EGPGME_BAD_PASSPHRASE] = "Bad passphrase supplied",
+    [AUTHINFO_EGPGME_BAD_BASE64] = "Malformed base64-encoded password",
     [AUTHINFO_ENOGPGME] = "Library built without GPG support"
 };
 
@@ -483,8 +484,7 @@ authinfo_password_extract(struct authinfo_password_t *password,
         n = base64_decode((uint8_t *) raw_password,
                           b64_password, TOKEN_SIZE_MAX);
         if (n == -1) {
-            /* TODO: better error */
-            ret = AUTHINFO_EGPGME;
+            ret = AUTHINFO_EGPGME_BAD_BASE64;
         } else {
             size_t data_length = n;
 
