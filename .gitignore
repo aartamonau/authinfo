@@ -35,3 +35,7 @@ lcov.info
 /lcov/
 *.o
 *.lo
+/docs/doxygen
+/docs/Doxyfile
+/docs/Makefile
+/docs/Makefile.in

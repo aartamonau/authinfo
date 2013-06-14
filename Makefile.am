@@ -1,5 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
+SUBDIRS = docs
+
 if DEBUG
 DEBUG_CPPFLAGS = -DDEBUG
 endif

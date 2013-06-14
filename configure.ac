@@ -6,7 +6,7 @@ LT_INIT([static])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/main.c])
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile docs/Makefile docs/Doxyfile])
 AC_CONFIG_HEADERS([config.h])
 
 AC_PROG_CC_C99
@@ -43,6 +43,14 @@ AM_CONDITIONAL([HAVE_LCOV], [test x$have_lcov = xyes])
 
 AC_CHECK_PROG([have_xdg_open], [xdg-open], [yes])
 AM_CONDITIONAL([HAVE_XDG_OPEN], [test x$have_xdg_open = xyes])
+
+AC_CHECK_PROG([have_doxygen], [doxygen], [yes])
+AM_CONDITIONAL([HAVE_DOXYGEN], [test x$have_doxygen = xyes])
+
+if test x$have_doxygen != xyes; then
+   AC_MSG_WARN(
+     [Doxygen not found. API documentation won't be generated])
+fi
 
 AC_ARG_ENABLE([gpg],
   [AS_HELP_STRING([--enable-gpg],
