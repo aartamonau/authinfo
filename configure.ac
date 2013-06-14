@@ -21,28 +21,28 @@ if test "x${GCC}" = xyes; then
   GCC_CFLAGS="-fvisibility=hidden -Wall -Werror"
 fi
 
-AC_SUBST(GCC_CFLAGS, ${GCC_CFLAGS})
+AC_SUBST([GCC_CFLAGS], ${GCC_CFLAGS})
 
-AC_DEFINE_DIR(SYSCONF_DIR, sysconfdir,
+AC_DEFINE_DIR([SYSCONF_DIR], [sysconfdir],
   [System configuration directory (typically /etc).])
 
 AM_PROG_CC_C_O
 
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.0], [have_check=yes], [have_check=no])
-AM_CONDITIONAL(HAVE_CHECK, [test x$have_check = xyes])
+AM_CONDITIONAL([HAVE_CHECK], [test x$have_check = xyes])
 
 AC_ARG_ENABLE([debug],
   [AS_HELP_STRING([--enable-debug],
           [Enable debug build. @<:@default=off@:>@])],
   [enable_debug="$enableval"],
   [enable_debug="no"])
-AM_CONDITIONAL(DEBUG, [test x$enable_debug = xyes])
+AM_CONDITIONAL([DEBUG], [test x$enable_debug = xyes])
 
 AC_CHECK_PROG([have_lcov], [lcov], [yes])
-AM_CONDITIONAL(HAVE_LCOV, [test x$have_lcov = xyes])
+AM_CONDITIONAL([HAVE_LCOV], [test x$have_lcov = xyes])
 
 AC_CHECK_PROG([have_xdg_open], [xdg-open], [yes])
-AM_CONDITIONAL(HAVE_XDG_OPEN, [test x$have_xdg_open = xyes])
+AM_CONDITIONAL([HAVE_XDG_OPEN], [test x$have_xdg_open = xyes])
 
 AC_ARG_ENABLE([gpg],
   [AS_HELP_STRING([--enable-gpg],
