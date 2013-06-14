@@ -62,7 +62,7 @@ EXPORT_FUNCTION enum authinfo_result_t authinfo_init(void);
 EXPORT_FUNCTION const char *authinfo_strerror(enum authinfo_result_t status);
 
 /**
- * Find a authinfo file to use.
+ * Find an authinfo file to use.
  *
  * @param[out] path Return authinfo file path here. Must be freed by the caller.
  *
