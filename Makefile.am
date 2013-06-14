@@ -39,16 +39,16 @@ authinfo_parsing_tests_LDADD = @CHECK_LIBS@ libauthinfo_impl.la
 authinfo_parsing_tests_CFLAGS = @CHECK_CFLAGS@ $(AM_CFLAGS)
 
 clean-local:
-	find $(CURDIR) \( -name "*.gcda" -o -name "*.gcno" -o -name "*.gcov" \) -delete
+	find . \( -name "*.gcda" -o -name "*.gcno" -o -name "*.gcov" \) -delete
 	rm -rf lcov.info lcov
 
 .PHONY: lcov
 if HAVE_LCOV
 lcov:
-	lcov --capture --directory $(CURDIR) --output-file lcov.info
+	lcov --capture --directory . --output-file lcov.info
 	genhtml lcov.info --output-directory lcov/
 
-	@echo "lcov report is ready: $(CURDIR)/lcov/index.html"
+	@echo "lcov report is ready: $$(pwd)/lcov/index.html"
 if HAVE_XDG_OPEN
 	xdg-open lcov/index.html
 endif
