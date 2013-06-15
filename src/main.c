@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <getopt.h>
 
+#include "config.h"
 #include "authinfo.h"
 
 enum command_t {
@@ -46,6 +47,12 @@ usage(void)
     printf("        --path             use this authinfo file instead of autodiscovered\n");
     printf("   --version    print version info\n");
     printf("   --help       print this help\n");
+}
+
+static void
+version(void)
+{
+    printf("authinfo version %s\n", PACKAGE_VERSION);
 }
 
 int
@@ -94,6 +101,21 @@ main(int argc, char *argv[])
             /* should not happen */
             assert(false);
         }
+    }
+
+    switch (command) {
+    case CMD_QUERY:
+        break;
+    case CMD_VALIDATE:
+        break;
+    case CMD_VERSION:
+        version();
+        break;
+    case CMD_HELP:
+        usage();
+        break;
+    default:
+        assert(false);
     }
 
     return EXIT_SUCCESS;
