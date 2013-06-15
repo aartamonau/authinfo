@@ -24,7 +24,11 @@ lib_LTLIBRARIES = libauthinfo.la
 libauthinfo_la_SOURCES =
 libauthinfo_la_LIBADD = libauthinfo_impl.la
 
-bin_PROGRAMS = authinfo
+if BUILD_AUTHINFO_TOOL
+AUTHINFO = authinfo
+endif
+
+bin_PROGRAMS = $(AUTHINFO)
 authinfo_SOURCES = $(top_srcdir)/src/main.c
 authinfo_LDADD = libauthinfo_impl.la
 
