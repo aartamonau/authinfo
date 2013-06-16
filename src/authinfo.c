@@ -902,19 +902,26 @@ authinfo_report_entry(authinfo_parse_entry_cb_t entry_callback,
                       const struct authinfo_parse_entry_t *entry)
 {
     bool stop;
+    struct authinfo_parse_entry_t e = *entry;
 
-    if (!entry->host) {
+    if (!e.host) {
         /* missing host is an error */
         return authinfo_report_error(error_callback, arg,
                                      AUTHINFO_PET_MISSING_HOST, line, 0);
     }
 
-    stop = (*entry_callback)(entry, arg);
+    /* if host is empty it means that this's a "default" entry; we report
+     * this by setting host to NULL */
+    if (strcmp(e.host, "") == 0) {
+        e.host = NULL;
+    }
+
+    stop = (*entry_callback)(&e, arg);
     TRACE("Reported an entry: host -> %s, protocol -> %s, "
           "user -> %s, password -> %s, force -> %d => %s\n",
-          entry->host, entry->protocol, entry->user,
-          entry->password ? entry->password->data : "(null)",
-          (int) entry->force,
+          e.host, entry.protocol, entry.user,
+          entry.password ? entry.password->data : "(null)",
+          (int) entry.force,
           stop ? "stopping" : "continuing");
 
     return stop;

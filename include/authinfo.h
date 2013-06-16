@@ -87,7 +87,7 @@ struct authinfo_password_t;
 
 /// Represents an entry in authinfo file.
 struct authinfo_parse_entry_t {
-    const char *host;           /**< Host. Empty for the "default" entry. */
+    const char *host;           /**< Host. NULL for the "default" entry. */
     const char *protocol;       /**< Protocol. NULL if omitted. */
     const char *user;           /**< User. NULL if omitted. */
     struct authinfo_password_t *password; /**< Password. NULL if omitted. */
