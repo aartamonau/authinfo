@@ -330,7 +330,7 @@ TEST(basic)
 
     parse_all("default user username "
               "password password protocol protocol force yes");
-    ASSERT_SINGLE_ENTRY("", "username", "password", "protocol", true);
+    ASSERT_SINGLE_ENTRY(NULL, "username", "password", "protocol", true);
 
     /* everything except host can be omitted */
     parse_all("host hostname user username "
@@ -452,7 +452,7 @@ TEST(multi_entry)
     ASSERT_NTH_ENTRY(0, "hostname", "username", "password", "protocol", true);
     ASSERT_NTH_ENTRY(1, "hostname", "username", "password", "protocol", true);
     ASSERT_NTH_ENTRY(2, "hostname", "username", "password", "protocol", true);
-    ASSERT_NTH_ENTRY(3, "", "username", "password", "protocol", true);
+    ASSERT_NTH_ENTRY(3, NULL, "username", "password", "protocol", true);
     ASSERT_NTH_ENTRY(4, "hostname", "username", "password", "protocol", false);
     ASSERT_NTH_ENTRY(5, "hostname", "username", "password", NULL, true);
     ASSERT_NTH_ENTRY(6, "hostname", "username", NULL, "protocol", true);
