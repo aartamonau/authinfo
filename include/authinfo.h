@@ -79,12 +79,14 @@ EXPORT_FUNCTION enum authinfo_result_t authinfo_find_file(char **path);
  *
  * @param path file path
  * @param buffer buffer to read the file into
- * @param size buffer size
+ * @param[in,out] size buffer size; after authinfo_read_file() completes
+ *                     successfully the size of the actual data is returned
+ *                     via this parameter
  *
  * @return status
  */
 EXPORT_FUNCTION enum authinfo_result_t
-authinfo_read_file(const char *path, char *buffer, size_t size);
+authinfo_read_file(const char *path, char *buffer, size_t *size);
 
 /// Opaque representation of a password.
 struct authinfo_password_t;
@@ -107,6 +109,8 @@ typedef bool
 
 /// Possible parsing error.
 enum authinfo_parse_error_type_t {
+    AUTHINFO_PET_NO_ERROR,      /**< No error. This is never returned to the
+                                 * user. */
     AUTHINFO_PET_MISSING_HOST,  /**< Host name was not specified. */
     AUTHINFO_PET_MISSING_VALUE, /**< Expected a value but got nothing. */
     AUTHINFO_PET_VALUE_TOO_LONG, /**< Value is too long to be handled. */
@@ -147,12 +151,14 @@ typedef bool
 /**
  * Parse authinfo file.
  *
- * @param data authinfo file as a C string
+ * @param data data to parse
+ * @param size size of the data
  * @param arg arbitrary argument that will be passed to callbacks
  * @param entry_callback a callback to be called for every parsed entry
  * @param error_callback a callback to be called for every parsing error
  */
-EXPORT_FUNCTION void authinfo_parse(const char *data, void *arg,
+EXPORT_FUNCTION void authinfo_parse(const char *data, size_t size,
+                                    void *arg,
                                     authinfo_parse_entry_cb_t entry_callback,
                                     authinfo_parse_error_cb_t error_callback);
 

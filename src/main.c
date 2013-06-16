@@ -93,7 +93,7 @@ maybe_find_file(void)
 }
 
 static void
-read_file(char *buffer, size_t size)
+read_file(char *buffer, size_t *size)
 {
     enum authinfo_result_t ret;
 
@@ -193,12 +193,13 @@ static void
 query(void)
 {
     char buffer[1 << 16];
+    size_t size = sizeof(buffer);
 
     init_authinfo();
     maybe_find_file();
-    read_file(buffer, sizeof(buffer));
+    read_file(buffer, &size);
 
-    authinfo_parse(buffer, NULL, query_entry, query_error);
+    authinfo_parse(buffer, size, NULL, query_entry, query_error);
 
     /* we reach here only if there were no matches */
     fprintf(stderr, "%s: no matching entries found\n", program);
@@ -224,13 +225,14 @@ static void
 validate(void)
 {
     char buffer[1 << 16];
+    size_t size = sizeof(buffer);
 
     init_authinfo();
     maybe_find_file();
-    read_file(buffer ,sizeof(buffer));
+    read_file(buffer, &size);
 
     printf("Parsing %s.\n", authinfo_path);
-    authinfo_parse(buffer, NULL, validate_entry, validate_error);
+    authinfo_parse(buffer, size, NULL, validate_entry, validate_error);
 
     if (error_count == 0) {
         printf("  No errors found\n");

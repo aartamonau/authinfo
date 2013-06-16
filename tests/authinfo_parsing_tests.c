@@ -100,7 +100,8 @@ parse_all(const char *data)
     entries_start = entries_count;
     errors_start = errors_count;
 
-    authinfo_parse(data, NULL, parse_all_entry_cb, parse_all_error_cb);
+    authinfo_parse(data, strlen(data),
+                   NULL, parse_all_entry_cb, parse_all_error_cb);
 }
 
 static bool
@@ -127,7 +128,8 @@ parse_one(const char *data)
     entries_start = entries_count;
     errors_start = errors_count;
 
-    authinfo_parse(data, NULL, parse_one_entry_cb, parse_one_error_cb);
+    authinfo_parse(data, strlen(data),
+                   NULL, parse_one_entry_cb, parse_one_error_cb);
 }
 
 

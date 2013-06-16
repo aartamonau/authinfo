@@ -35,6 +35,14 @@ struct authinfo_password_t {
     bool encrypted;
 };
 
+struct authinfo_stream_t {
+    const char *data;
+    size_t size;
+
+    unsigned int line;
+    unsigned int column;
+};
+
 /* internal macros */
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
@@ -84,20 +92,31 @@ static enum authinfo_result_t
 authinfo_do_read_file(const char *path, char *buffer,
                       size_t buffer_size, size_t *data_size);
 
-static void authinfo_skip_spaces(const char **str, unsigned int *column);
+static int
+authinfo_lookahead(struct authinfo_stream_t *stream);
 
-static bool authinfo_eol(const char *str);
+static int
+authinfo_next_char(struct authinfo_stream_t *stream);
 
-static bool authinfo_eof(const char *str);
+static void authinfo_skip_spaces(struct authinfo_stream_t *stream);
 
-static void authinfo_skip_line(const char **str,
-                               unsigned int *line, unsigned int *column);
+static bool authinfo_eol(struct authinfo_stream_t *stream);
 
-static bool authinfo_skip_comment(const char **str,
-                                  unsigned int *line, unsigned int *column);
+static bool authinfo_eof(struct authinfo_stream_t *stream);
 
-static bool authinfo_skip_macdef(const char **str,
-                                 unsigned int *line, unsigned int *column);
+static void authinfo_skip_line(struct authinfo_stream_t *stream);
+
+static bool authinfo_skip_comment(struct authinfo_stream_t *stream);
+
+static bool authinfo_skip_macdef(struct authinfo_stream_t *stream);
+
+static bool
+authinfo_next_token(struct authinfo_stream_t *stream, char *token,
+                    struct authinfo_parse_error_t *error);
+
+static bool
+authinfo_quoted_token(struct authinfo_stream_t *stream, char *token,
+                      struct authinfo_parse_error_t *error);
 
 static bool authinfo_report_entry(authinfo_parse_entry_cb_t entry_callback,
                                   authinfo_parse_error_cb_t error_callback,
@@ -109,14 +128,6 @@ static bool
 authinfo_report_error(authinfo_parse_error_cb_t error_callback, void *arg,
                       enum authinfo_parse_error_type_t type,
                       unsigned int line, unsigned int column);
-
-static bool
-authinfo_next_token(const char **str, unsigned int *column, char *token,
-                    struct authinfo_parse_error_t *error);
-
-static bool
-authinfo_quoted_token(const char **str, unsigned int *column, char *token,
-                      struct authinfo_parse_error_t *error);
 /* internal functions prototypes end */
 
 enum authinfo_result_t
@@ -178,21 +189,20 @@ authinfo_find_file(char **path)
 }
 
 enum authinfo_result_t
-authinfo_read_file(const char *path, char *buffer, size_t size)
+authinfo_read_file(const char *path, char *buffer, size_t *size)
 {
     enum authinfo_result_t ret;
     size_t data_size;
 
-    ret = authinfo_do_read_file(path, buffer, size, &data_size);
+    ret = authinfo_do_read_file(path, buffer, *size, &data_size);
     if (ret != AUTHINFO_OK) {
         return ret;
     }
 
     if (authinfo_is_gpged_file(path)) {
 #ifdef HAVE_GPGME
-        assert(data_size < size);
-        /* we need to leave space for trailing zero thus (size - 1) */
-        ret = authinfo_gpgme_decrypt(buffer, &data_size, size - 1,
+        assert(data_size <= *size);
+        ret = authinfo_gpgme_decrypt(buffer, &data_size, *size,
                                      GPGME_DATA_ENCODING_NONE);
 #else
         ret = AUTHINFO_ENOGPGME;
@@ -200,8 +210,7 @@ authinfo_read_file(const char *path, char *buffer, size_t size)
     }
 
     if (ret == AUTHINFO_OK) {
-        assert(data_size < size);
-        buffer[data_size] = '\0';
+        *size = data_size;
     }
 
     return ret;
@@ -242,13 +251,11 @@ const char *parse_state2str(enum parse_state_t state)
 #endif
 
 void
-authinfo_parse(const char *data, void *arg,
+authinfo_parse(const char *data, size_t size,
+               void *arg,
                authinfo_parse_entry_cb_t entry_callback,
                authinfo_parse_error_cb_t error_callback)
 {
-    unsigned int line = 1;
-    unsigned int column = 0;
-
     char host[TOKEN_SIZE_MAX];
     char protocol[TOKEN_SIZE_MAX];
     char user[TOKEN_SIZE_MAX];
@@ -260,30 +267,38 @@ authinfo_parse(const char *data, void *arg,
 
     enum parse_state_t state = LINE_START;
 
+    struct authinfo_stream_t stream = {
+        .data = data,
+        .size = size,
+        .line = 1,
+        .column = 0,
+    };
+
     while (!stop) {
         char token[TOKEN_SIZE_MAX];
         struct authinfo_parse_error_t parse_error;
 
-        unsigned long token_column = column;
-        authinfo_skip_spaces(&data, &column);
+        unsigned long token_column = stream.column;
+        authinfo_skip_spaces(&stream);
 
         TRACE("\n");
         TRACE("State: %s\n", parse_state2str(state));
-        TRACE("Position: %u:%u\n", line, column);
+        TRACE("Position: %u:%u\n", stream.line, stream.column);
 
-        if (authinfo_eol(data)) {
-            TRACE("Encountered EOL at %u:%u\n", line, column);
+        if (authinfo_eol(&stream)) {
+            TRACE("Encountered EOL at %u:%u\n", stream.line, stream.column);
 
             switch (state) {
             case LINE_START:
                 /* is this really a EOF? */
-                if (authinfo_eof(data)) {
-                    TRACE("Encountered EOF at %u:%u\n", line, column);
+                if (authinfo_eof(&stream)) {
+                    TRACE("Encountered EOF at %u:%u\n",
+                          stream.line, stream.column);
                     stop = true;
                 } else {
-                    TRACE("Skipping empty line %u\n", line);
+                    TRACE("Skipping empty line %u\n", stream.line);
                     /* we haven't read anything; just go to the next line */
-                    authinfo_skip_line(&data, &line, &column);
+                    authinfo_skip_line(&stream);
                 }
                 continue;
             case WAITING_NEXT_PAIR:
@@ -295,7 +310,7 @@ authinfo_parse(const char *data, void *arg,
                 /* we were waiting for some value; report an error */
                 stop = authinfo_report_error(error_callback, arg,
                                              AUTHINFO_PET_MISSING_VALUE,
-                                             line, token_column);
+                                             stream.line, token_column);
 
             }
         }
@@ -310,8 +325,8 @@ authinfo_parse(const char *data, void *arg,
             entry.password = NULL;
             entry.force = false;
 
-            if (!authinfo_skip_comment(&data, &line, &column)) {
-                if (!authinfo_skip_macdef(&data, &line, &column)) {
+            if (!authinfo_skip_comment(&stream)) {
+                if (!authinfo_skip_macdef(&stream)) {
                     state = WAITING_NEXT_PAIR;
                 }
             }
@@ -319,12 +334,12 @@ authinfo_parse(const char *data, void *arg,
             break;
         case LINE_END:
             stop = authinfo_report_entry(entry_callback, error_callback, arg,
-                                         line, &entry);
-            authinfo_skip_line(&data, &line, &column);
+                                         stream.line, &entry);
+            authinfo_skip_line(&stream);
             state = LINE_START;
             break;
         case WAITING_NEXT_PAIR:
-            if (authinfo_next_token(&data, &column, token, &parse_error)) {
+            if (authinfo_next_token(&stream, token, &parse_error)) {
                 bool report_duplicate = false;
 
                 TRACE("Read token \"%s\"\n", token);
@@ -356,25 +371,31 @@ authinfo_parse(const char *data, void *arg,
                 } else {
                     stop = authinfo_report_error(error_callback, arg,
                                                  AUTHINFO_PET_BAD_KEYWORD,
-                                                 line, token_column);
+                                                 stream.line, token_column);
                 }
 
                 if (report_duplicate) {
                     stop = authinfo_report_error(error_callback, arg,
                                                  AUTHINFO_PET_DUPLICATED_KEYWORD,
-                                                 line, token_column);
+                                                 stream.line, token_column);
 
                 }
             } else {
+                TRACE("Failed to read token at (%u:%u): %s\n",
+                      parse_error.line, parse_error.column,
+                      authinfo_parse_strerror(parse_error.type));
+
                 switch (parse_error.type) {
                 case AUTHINFO_PET_VALUE_TOO_LONG:
                     stop = authinfo_report_error(error_callback, arg,
                                                  AUTHINFO_PET_BAD_KEYWORD,
-                                                 line, parse_error.column);
+                                                 parse_error.line,
+                                                 parse_error.column);
                     break;
                 default:
                     stop = authinfo_report_error(error_callback, arg,
-                                                 parse_error.type, line,
+                                                 parse_error.type,
+                                                 parse_error.line,
                                                  parse_error.column);
                 }
             }
@@ -384,7 +405,7 @@ authinfo_parse(const char *data, void *arg,
         case WAITING_USER:
         case WAITING_PASSWORD:
         case WAITING_FORCE:
-            if (authinfo_next_token(&data, &column, token, &parse_error)) {
+            if (authinfo_next_token(&stream, token, &parse_error)) {
                 TRACE("Read token \"%s\"\n", token);
 
                 switch (state) {
@@ -394,7 +415,7 @@ authinfo_parse(const char *data, void *arg,
                     } else {
                         stop = authinfo_report_error(error_callback, arg,
                                                      AUTHINFO_PET_BAD_VALUE,
-                                                     line, token_column);
+                                                     stream.line, token_column);
                     }
 
                     break;
@@ -431,7 +452,8 @@ authinfo_parse(const char *data, void *arg,
             } else {
                 stop = authinfo_report_error(error_callback, arg,
                                              parse_error.type,
-                                             line, parse_error.column);
+                                             parse_error.line,
+                                             parse_error.column);
                 state = WAITING_NEXT_PAIR;
             }
 
@@ -775,7 +797,9 @@ authinfo_do_read_file(const char *path, char *buffer,
         ssize_t nread;
 
         if (buffer_size == 0) {
-            /* we'll always live an extra byte for potential ending \0 */
+            /* it's not completely correct to return an error here because
+             * it's possible that the file is exactly the size of the buffer;
+             * but we'll ignore this rare case */
             return AUTHINFO_ETOOBIG;
         }
 
@@ -800,56 +824,78 @@ authinfo_do_read_file(const char *path, char *buffer,
     }
 }
 
-static void
-authinfo_skip_spaces(const char **str, unsigned int *column)
+static int
+authinfo_lookahead(struct authinfo_stream_t *stream)
 {
-    size_t span;
-
-    span = strspn(*str, " \t");
-    *str += span;
-    *column += span;
+    assert(stream->size);
+    return *stream->data;
 }
 
-static bool
-authinfo_eol(const char *str)
+static int
+authinfo_next_char(struct authinfo_stream_t *stream)
 {
-    return *str == '\n' ||
-        *str == '\0';
-}
+    int c;
 
-static bool
-authinfo_eof(const char *str)
-{
-    return *str == '\0';
-}
+    assert(stream->size);
+    c = *stream->data;
 
-static void
-authinfo_skip_line(const char **str, unsigned int *line, unsigned int *column)
-{
-    size_t cspan;
-
-    cspan = strcspn(*str, "\n");
-    *str += cspan;
-
-    if (**str == '\n') {
-        *str += 1;
-        *column = 0;
-        *line += 1;
+    stream->data += 1;
+    stream->size -= 1;
+    if (c == '\n') {
+        stream->line += 1;
+        stream->column = 0;
     } else {
-        /* EOF */
-        *column += cspan;
+        stream->column += 1;
+    }
+
+    return c;
+}
+
+static void
+authinfo_skip_spaces(struct authinfo_stream_t *stream)
+{
+    while (!authinfo_eof(stream)) {
+        int c = authinfo_lookahead(stream);
+        if (c != ' ' && c != '\t') {
+            break;
+        }
+
+        (void) authinfo_next_char(stream);
     }
 }
 
 static bool
-authinfo_skip_comment(const char **str,
-                      unsigned int *line, unsigned int *column)
+authinfo_eol(struct authinfo_stream_t *stream)
 {
-    const char *p = *str;
+    return authinfo_eof(stream) || authinfo_lookahead(stream) == '\n';
+}
 
-    if (*p == '#') {
-        TRACE("Skipping comment at line %u\n", *line);
-        authinfo_skip_line(str, line, column);
+static bool
+authinfo_eof(struct authinfo_stream_t *stream)
+{
+    return stream->size == 0;
+}
+
+static void
+authinfo_skip_line(struct authinfo_stream_t *stream)
+{
+    while (!authinfo_eof(stream) &&
+           authinfo_lookahead(stream) != '\n') {
+        (void) authinfo_next_char(stream);
+    }
+
+    if (!authinfo_eof(stream)) {
+        /* we stopped on new line so we want to skip it */
+        (void) authinfo_next_char(stream);
+    }
+}
+
+static bool
+authinfo_skip_comment(struct authinfo_stream_t *stream)
+{
+    if (authinfo_lookahead(stream) == '#') {
+        TRACE("Skipping comment at line %u\n", stream->line);
+        authinfo_skip_line(stream);
         return true;
     }
 
@@ -857,32 +903,25 @@ authinfo_skip_comment(const char **str,
 }
 
 static bool
-authinfo_skip_macdef(const char **str,
-                     unsigned int *line, unsigned int *column)
+authinfo_skip_macdef(struct authinfo_stream_t *stream)
 {
     char token[TOKEN_SIZE_MAX];
 
-    const char *token_end = *str;
-    unsigned int token_end_column = *column;
+    struct authinfo_stream_t tmp_stream = *stream;
 
-    if (authinfo_next_token(&token_end, &token_end_column, token, NULL) &&
+    if (authinfo_next_token(&tmp_stream, token, NULL) &&
         strcmp(token, "macdef") == 0) {
 
-#ifdef DEBUG
-        unsigned int start_line = *line;
-#endif
-
-        *column = token_end_column;
-        *str = token_end;
-
         do {
-            authinfo_skip_line(str, line, column);
-        } while (!authinfo_eol(*str));
+            authinfo_skip_line(&tmp_stream);
+        } while (!authinfo_eol(&tmp_stream));
 
-        TRACE("Skipped macdef on lines %u-%u\n", start_line, *line);
+        TRACE("Skipped macdef on lines %u-%u\n", stream->line, tmp_stream.line);
 
         /* skip current empty line (if any) */
-        authinfo_skip_line(str, line, column);
+        authinfo_skip_line(&tmp_stream);
+
+        *stream = tmp_stream;
 
         return true;
     }
@@ -942,63 +981,74 @@ authinfo_report_error(authinfo_parse_error_cb_t error_callback, void *arg,
 }
 
 static bool
-authinfo_next_token(const char **str, unsigned int *column, char *token,
+authinfo_next_token(struct authinfo_stream_t *stream, char *token,
                     struct authinfo_parse_error_t *error)
 {
-    size_t cspan;
     bool ret = true;
+    size_t span;
+    struct authinfo_stream_t tmp_stream;
 
-    if (**str == '"') {
-        return authinfo_quoted_token(str, column, token, error);
+    if (!authinfo_eof(stream) && authinfo_lookahead(stream) == '"') {
+        return authinfo_quoted_token(stream, token, error);
     }
 
-    cspan = strcspn(*str, " \t\n");
+    tmp_stream = *stream;
+    while (!authinfo_eof(&tmp_stream)) {
+        int c = authinfo_lookahead(&tmp_stream);
+        if (c == ' ' || c == '\t' || c == '\n') {
+            break;
+        }
 
-    if (cspan >= TOKEN_SIZE_MAX) {
+        (void) authinfo_next_char(&tmp_stream);
+    }
+
+    span = tmp_stream.data - stream->data;
+    if (span >= TOKEN_SIZE_MAX) {
         if (error != NULL) {
             error->type = AUTHINFO_PET_VALUE_TOO_LONG;
-            error->column = *column;
+            error->line = stream->line;
+            error->column = stream->column;
         }
         ret = false;
     } else {
-        memcpy(token, *str, cspan);
-        token[cspan] = '\0';
+        memcpy(token, stream->data, span);
+        token[span] = '\0';
     }
 
-    *column += cspan;
-    *str += cspan;
+    *stream = tmp_stream;
 
     return ret;
 }
 
 static bool
-authinfo_quoted_token(const char **str, unsigned int *column, char *token,
+authinfo_quoted_token(struct authinfo_stream_t *stream, char *token,
                       struct authinfo_parse_error_t *error)
 {
-    const char *p = *str;
     enum { NORMAL,
            SEEN_BACKSLASH,
            DONE } state = NORMAL;
-    unsigned long token_column = *column;
+    unsigned long token_column = stream->column;
     size_t nwritten = 0;
     bool error_occurred = false;
+    int c;
 
-    assert(*p == '"');
-
-    ++p;
-    *column += 1;
+    c = authinfo_next_char(stream);
+    assert(c == '"');
 
     while (state != DONE) {
-        if (authinfo_eol(p)) {
+        if (authinfo_eol(stream)) {
             error_occurred = true;
             error->type = AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN;
-            error->column = *column;
+            error->line = stream->line;
+            error->column = stream->column;
             break;
         }
 
+        c = authinfo_lookahead(stream);
+
         switch (state) {
         case NORMAL:
-            switch (*p) {
+            switch (c) {
             case '"':
                 state = DONE;
                 break;
@@ -1007,12 +1057,12 @@ authinfo_quoted_token(const char **str, unsigned int *column, char *token,
                 break;
             default:
                 if (!error_occurred) {
-                    token[nwritten++] = *p;
+                    token[nwritten++] = c;
                 }
             }
             break;
         case SEEN_BACKSLASH:
-            switch (*p) {
+            switch (c) {
             case '"':
                 if (!error_occurred) {
                     token[nwritten++] = '"';
@@ -1029,7 +1079,8 @@ authinfo_quoted_token(const char **str, unsigned int *column, char *token,
                 if (!error_occurred) {
                     error_occurred = true;
                     error->type = AUTHINFO_PET_UNSUPPORTED_ESCAPE;
-                    error->column = *column - 1;
+                    error->line = stream->line;
+                    error->column = stream->column - 1;
                 }
                 state = NORMAL;
             }
@@ -1042,14 +1093,13 @@ authinfo_quoted_token(const char **str, unsigned int *column, char *token,
         if (state != DONE && nwritten >= (TOKEN_SIZE_MAX - 1)) {
             error_occurred = true;
             error->type = AUTHINFO_PET_VALUE_TOO_LONG;
+            error->line = stream->line;
             error->column = token_column;
         }
 
-        ++p;
-        *column += 1;
+        (void) authinfo_next_char(stream);
     }
 
-    *str = p;
     token[nwritten] = '\0';
 
     return !error_occurred;
