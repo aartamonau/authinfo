@@ -951,13 +951,13 @@ authinfo_report_entry(authinfo_parse_entry_cb_t entry_callback,
         e.host = NULL;
     }
 
-    stop = (*entry_callback)(&e, arg);
-    TRACE("Reported an entry: host -> %s, protocol -> %s, "
-          "user -> %s, password -> %s, force -> %d => %s\n",
+    TRACE("Reporting an entry: host -> %s, protocol -> %s, "
+          "user -> %s, password -> %s, force -> %d\n",
           e.host, e.protocol, e.user,
           e.password ? e.password->data : "(null)",
-          (int) e.force,
-          stop ? "stopping" : "continuing");
+          (int) e.force);
+    stop = (*entry_callback)(&e, arg);
+    TRACE("    ====> %s\n", stop ? "stopping" : "continuing");
 
     return stop;
 }
@@ -972,10 +972,12 @@ authinfo_report_error(authinfo_parse_error_cb_t error_callback, void *arg,
         .column = column,
         .type = type
     };
+
+    TRACE("Reporting an error: %s (%u:%u)\n",
+          authinfo_parse_strerror(type), line, column);
     bool stop = (*error_callback)(&error, arg);
-    TRACE("Reported an error: %s (%u:%u) => %s\n",
-          authinfo_parse_strerror(type),
-          line, column, stop ? "stopping" : "continuing");
+    TRACE("    ====> %s\n",
+          stop ? "stopping" : "continuing");
 
     return stop;
 }
