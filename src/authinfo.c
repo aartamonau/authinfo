@@ -915,9 +915,9 @@ authinfo_report_entry(authinfo_parse_entry_cb_t entry_callback,
     stop = (*entry_callback)(&e, arg);
     TRACE("Reported an entry: host -> %s, protocol -> %s, "
           "user -> %s, password -> %s, force -> %d => %s\n",
-          e.host, entry.protocol, entry.user,
-          entry.password ? entry.password->data : "(null)",
-          (int) entry.force,
+          e.host, e.protocol, e.user,
+          e.password ? e.password->data : "(null)",
+          (int) e.force,
           stop ? "stopping" : "continuing");
 
     return stop;
