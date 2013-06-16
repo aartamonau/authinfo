@@ -34,6 +34,8 @@ static const char *user = NULL;
 static const char *host = NULL;
 static const char *protocol = NULL;
 
+static int error_count = 0;
+
 static void
 usage(void)
 {
@@ -202,6 +204,40 @@ query(void)
     exit(EXIT_FAILURE);
 }
 
+static bool
+validate_error(const struct authinfo_parse_error_t *error, void *arg)
+{
+    printf("  %u:%u: %s\n",
+           error->line, error->column, authinfo_parse_strerror(error->type));
+    ++error_count;
+    return false;
+}
+
+static bool
+validate_entry(const struct authinfo_parse_entry_t *entry, void *arg)
+{
+    return false;
+}
+
+static void
+validate(void)
+{
+    char buffer[1 << 16];
+
+    init_authinfo();
+    maybe_find_file();
+    read_file(buffer ,sizeof(buffer));
+
+    printf("Parsing %s.\n", authinfo_path);
+    authinfo_parse(buffer, NULL, validate_entry, validate_error);
+
+    if (error_count == 0) {
+        printf("  No errors found\n");
+    } else {
+        exit(EXIT_FAILURE);
+    }
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -255,6 +291,7 @@ main(int argc, char *argv[])
         query();
         break;
     case CMD_VALIDATE:
+        validate();
         break;
     case CMD_VERSION:
         version();
