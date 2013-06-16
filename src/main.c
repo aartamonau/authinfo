@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <getopt.h>
 #include <string.h>
+#include <locale.h>
 
 #include "config.h"
 #include "authinfo.h"
@@ -254,6 +255,8 @@ main(int argc, char *argv[])
     };
 
     program = argv[0];
+
+    setlocale(LC_ALL, "");
 
     while (true) {
         int opt;

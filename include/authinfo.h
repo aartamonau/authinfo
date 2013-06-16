@@ -48,6 +48,10 @@ enum authinfo_result_t {
  * the library. And if your program is multithreaded, it must be called in a
  * single thread.
  *
+ * Among other things this function will query current locale to set up GPG
+ * accordingly. So you might want to call setlocale to set it to the desired
+ * value.
+ *
  * @return result
  */
 EXPORT_FUNCTION enum authinfo_result_t authinfo_init(void);
