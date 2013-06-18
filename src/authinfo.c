@@ -1040,9 +1040,11 @@ authinfo_quoted_token(struct authinfo_stream_t *stream, char *token,
     while (state != DONE) {
         if (authinfo_eol(stream)) {
             error_occurred = true;
-            error->type = AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN;
-            error->line = stream->line;
-            error->column = stream->column;
+            if (error != NULL) {
+                error->type = AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN;
+                error->line = stream->line;
+                error->column = stream->column;
+            }
             break;
         }
 
@@ -1080,9 +1082,11 @@ authinfo_quoted_token(struct authinfo_stream_t *stream, char *token,
             default:
                 if (!error_occurred) {
                     error_occurred = true;
-                    error->type = AUTHINFO_PET_UNSUPPORTED_ESCAPE;
-                    error->line = stream->line;
-                    error->column = stream->column - 1;
+                    if (error != NULL) {
+                        error->type = AUTHINFO_PET_UNSUPPORTED_ESCAPE;
+                        error->line = stream->line;
+                        error->column = stream->column - 1;
+                    }
                 }
                 state = NORMAL;
             }
@@ -1094,9 +1098,11 @@ authinfo_quoted_token(struct authinfo_stream_t *stream, char *token,
 
         if (state != DONE && nwritten >= (TOKEN_SIZE_MAX - 1)) {
             error_occurred = true;
-            error->type = AUTHINFO_PET_VALUE_TOO_LONG;
-            error->line = stream->line;
-            error->column = token_column;
+            if (error != NULL) {
+                error->type = AUTHINFO_PET_VALUE_TOO_LONG;
+                error->line = stream->line;
+                error->column = token_column;
+            }
         }
 
         (void) authinfo_next_char(stream);
