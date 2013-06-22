@@ -1,6 +1,6 @@
 AC_PREREQ([2.69])
 
-AC_INIT([libauthinfo], [0.1], [https://github.com/aartamonau/libauthinfo/issues])
+AC_INIT([authinfo], [0.1], [https://github.com/aartamonau/authinfo/issues])
 AM_INIT_AUTOMAKE
 LT_INIT([static])
 
