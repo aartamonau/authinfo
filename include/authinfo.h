@@ -181,9 +181,9 @@ authinfo_password_extract(struct authinfo_password_t *password,
 
 /**
  * Release resources held by the #authinfo_parse_entry_t structure returned by
- * authinfo_simple_query() function. Note this function *must* not be called
- * on the entries that are passed to the entry callback by authinfo_parse()
- * function.
+ * authinfo_simple_query() function. Note this function <b>must not</b> be
+ * called on the entries that are passed to the entry callback by
+ * authinfo_parse() function.
  *
  * @param entry an entry to free
  */
