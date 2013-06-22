@@ -121,7 +121,6 @@ enum authinfo_parse_error_type_t {
     AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN, /**< Quoted token ends
                                              * unexpectedly. */
     AUTHINFO_PET_UNSUPPORTED_ESCAPE, /**< Unsupported escape sequence found. */
-    AUTHINFO_PET_ENCODING_ERROR, /**< Encoding error. */
     AUTHINFO_PET_MAX
 };
 

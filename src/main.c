@@ -128,7 +128,6 @@ emit_env_var(const char *var, const char *value)
 
     *d++ = '\'';
 
-    /* TODO: use wchar_t here */
     while (*s) {
         if (*s == '\'') {
             /* there's no way to escape single quote in single-quoted string;
