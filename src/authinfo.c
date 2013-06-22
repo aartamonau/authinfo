@@ -893,6 +893,9 @@ authinfo_skip_line(struct authinfo_stream_t *stream)
 static bool
 authinfo_skip_comment(struct authinfo_stream_t *stream)
 {
+    /* this is ensured by authinfo_parse function */
+    assert(!authinfo_eof(stream));
+
     if (authinfo_lookahead(stream) == '#') {
         TRACE("Skipping comment at line %u\n", stream->line);
         authinfo_skip_line(stream);
@@ -1048,6 +1051,8 @@ authinfo_quoted_token(struct authinfo_stream_t *stream, char *token,
             break;
         }
 
+        /* this is safe because authinfo_eol above prevents us from hitting
+         * EOF */
         c = authinfo_lookahead(stream);
 
         switch (state) {
