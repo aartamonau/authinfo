@@ -105,12 +105,6 @@ read_file(char *buffer, size_t *size)
     }
 }
 
-static bool
-str_matches(const char *user_str, const char *str)
-{
-    return (user_str == NULL) || (str == NULL) || (strcmp(user_str, str) == 0);
-}
-
 static void
 emit_env_var(const char *var, const char *value)
 {
@@ -151,42 +145,25 @@ emit_env_var(const char *var, const char *value)
     printf("export %s\n", var);
 }
 
-static bool
-query_error(const struct authinfo_parse_error_t *error, void *arg)
+static void
+query_process_entry(const struct authinfo_parse_entry_t *entry)
 {
-    fprintf(stderr, "%s: parse error at %s:%u:%u (%s)\n",
-            program, authinfo_path, error->line, error->column,
-            authinfo_parse_strerror(error->type));
-    exit(EXIT_FAILURE);
-}
+    const char *password = NULL;
 
-static bool
-query_entry(const struct authinfo_parse_entry_t *entry, void *arg)
-{
-    if (str_matches(user, entry->user) &&
-        str_matches(host, entry->host) &&
-        str_matches(protocol, entry->protocol)) {
-        const char *password = NULL;
+    if (entry->password != NULL) {
+        enum authinfo_result_t ret;
 
-        if (entry->password != NULL) {
-            enum authinfo_result_t ret;
-
-            ret = authinfo_password_extract(entry->password, &password);
-            if (ret != AUTHINFO_OK) {
-                authinfo_error(ret, "couldn't extract password");
-            }
+        ret = authinfo_password_extract(entry->password, &password);
+        if (ret != AUTHINFO_OK) {
+            authinfo_error(ret, "couldn't extract password");
         }
-
-        emit_env_var("AUTHINFO_HOST", entry->host);
-        emit_env_var("AUTHINFO_USER", entry->user);
-        emit_env_var("AUTHINFO_PROTOCOL", entry->protocol);
-        emit_env_var("AUTHINFO_PASSWORD", password);
-        emit_env_var("AUTHINFO_DEFAULT", (entry->host == NULL) ? "yes" : "no");
-
-        exit(EXIT_SUCCESS);
     }
 
-    return false;
+    emit_env_var("AUTHINFO_HOST", entry->host);
+    emit_env_var("AUTHINFO_USER", entry->user);
+    emit_env_var("AUTHINFO_PROTOCOL", entry->protocol);
+    emit_env_var("AUTHINFO_PASSWORD", password);
+    emit_env_var("AUTHINFO_DEFAULT", (entry->host == NULL) ? "yes" : "no");
 }
 
 static void
@@ -195,15 +172,37 @@ query(void)
     char buffer[1 << 16];
     size_t size = sizeof(buffer);
 
+    enum authinfo_result_t ret;
+    struct authinfo_parse_entry_t entry;
+    struct authinfo_parse_error_t error;
+
+    int status = EXIT_SUCCESS;
+
     init_authinfo();
     maybe_find_file();
     read_file(buffer, &size);
 
-    authinfo_parse(buffer, size, NULL, query_entry, query_error);
+    ret = authinfo_simple_query(buffer, size, host, protocol, user,
+                                &entry, &error);
+    switch (ret) {
+    case AUTHINFO_OK:
+        query_process_entry(&entry);
+        break;
+    case AUTHINFO_ENOMATCH:
+        fprintf(stderr, "%s: no matching entries found\n", program);
+        status = EXIT_FAILURE;
+        break;
+    case AUTHINFO_EPARSE:
+        fprintf(stderr, "%s: parse error at %s:%u:%u (%s)\n",
+                program, authinfo_path, error.line, error.column,
+                authinfo_parse_strerror(error.type));
+        status = EXIT_FAILURE;
+        break;
+    default:
+        authinfo_error(ret, "couldn't find matching entry");
+    }
 
-    /* we reach here only if there were no matches */
-    fprintf(stderr, "%s: no matching entries found\n", program);
-    exit(EXIT_FAILURE);
+    exit(status);
 }
 
 static bool

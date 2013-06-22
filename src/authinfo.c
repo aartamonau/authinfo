@@ -43,6 +43,17 @@ struct authinfo_stream_t {
     unsigned int column;
 };
 
+struct authinfo_simple_query_data_t {
+    const char *host;
+    const char *protocol;
+    const char *user;
+
+    enum authinfo_result_t status;
+
+    struct authinfo_parse_entry_t *entry;
+    struct authinfo_parse_error_t *error;
+};
+
 /* internal macros */
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
@@ -128,6 +139,14 @@ static bool
 authinfo_report_error(authinfo_parse_error_cb_t error_callback, void *arg,
                       enum authinfo_parse_error_type_t type,
                       unsigned int line, unsigned int column);
+
+static bool
+authinfo_simple_query_entry(const struct authinfo_parse_entry_t *entry,
+                            struct authinfo_simple_query_data_t *data);
+
+static bool
+authinfo_simple_query_error(const struct authinfo_parse_error_t *error,
+                            struct authinfo_simple_query_data_t *data);
 /* internal functions prototypes end */
 
 enum authinfo_result_t
@@ -151,7 +170,9 @@ static const char *authinfo_result2str[] = {
     [AUTHINFO_EGPGME_DECRYPT_FAILED] = "Decryption failed",
     [AUTHINFO_EGPGME_BAD_PASSPHRASE] = "Bad passphrase supplied",
     [AUTHINFO_EGPGME_BAD_BASE64] = "Malformed base64-encoded password",
-    [AUTHINFO_ENOGPGME] = "Library built without GPG support"
+    [AUTHINFO_ENOGPGME] = "Library built without GPG support",
+    [AUTHINFO_ENOMATCH] = "No matching entry was found",
+    [AUTHINFO_EPARSE] = "Parsing error",
 };
 
 const char *
@@ -532,6 +553,49 @@ authinfo_password_extract(struct authinfo_password_t *password,
     }
 
     return ret;
+}
+
+enum authinfo_result_t
+authinfo_simple_query(const char *data, size_t size,
+                      const char *host, const char *protocol, const char *user,
+                      struct authinfo_parse_entry_t *entry,
+                      struct authinfo_parse_error_t *error)
+{
+    struct authinfo_simple_query_data_t arg = {
+        .host = host,
+        .protocol = protocol,
+        .user = user,
+
+        .status = AUTHINFO_ENOMATCH,
+        .entry = entry,
+        .error = error,
+    };
+
+    authinfo_parse(data, size, (void *) &arg,
+                   (authinfo_parse_entry_cb_t) authinfo_simple_query_entry,
+                   (authinfo_parse_error_cb_t) authinfo_simple_query_error);
+
+    return arg.status;
+}
+
+void
+authinfo_parse_entry_free(struct authinfo_parse_entry_t *entry)
+{
+    if (entry->host != NULL) {
+        free((void *) entry->host);
+    }
+
+    if (entry->user != NULL) {
+        free((void *) entry->user);
+    }
+
+    if (entry->protocol != NULL) {
+        free((void *) entry->protocol);
+    }
+
+    if (entry->password != NULL) {
+        free((void *) entry->password);
+    }
 }
 
 /* internal */
@@ -1116,4 +1180,76 @@ authinfo_quoted_token(struct authinfo_stream_t *stream, char *token,
     token[nwritten] = '\0';
 
     return !error_occurred;
+}
+
+static bool
+str_matches(const char *user_str, const char *str)
+{
+    return (user_str == NULL) || (str == NULL) || (strcmp(user_str, str) == 0);
+}
+
+static bool
+authinfo_simple_query_entry(const struct authinfo_parse_entry_t *entry,
+                            struct authinfo_simple_query_data_t *data)
+{
+    if (str_matches(data->user, entry->user) &&
+        str_matches(data->host, entry->host) &&
+        str_matches(data->protocol, entry->protocol)) {
+
+        data->entry->host = NULL;
+        data->entry->user = NULL;
+        data->entry->protocol = NULL;
+        data->entry->password = NULL;
+        data->entry->force = entry->force;
+
+        if (entry->host != NULL) {
+            data->entry->host = strdup(entry->host);
+            if (data->entry->host == NULL) {
+                goto simple_query_entry_error;
+            }
+        }
+
+        if (entry->protocol != NULL) {
+            data->entry->protocol = strdup(entry->protocol);
+            if (data->entry->protocol == NULL) {
+                goto simple_query_entry_error;
+            }
+        }
+
+        if (entry->user != NULL) {
+            data->entry->user = strdup(entry->user);
+            if (data->entry->user == NULL) {
+                goto simple_query_entry_error;
+            }
+        }
+
+        if (entry->password != NULL) {
+            data->entry->password = malloc(sizeof(*entry->password));
+            if (data->entry->password == NULL) {
+                goto simple_query_entry_error;
+            }
+
+            memcpy(data->entry->password, entry->password,
+                   sizeof(*entry->password));
+        }
+
+        data->status = AUTHINFO_OK;
+        return true;
+
+    simple_query_entry_error:
+        authinfo_parse_entry_free(data->entry);
+        data->status = AUTHINFO_ENOMEM;
+        return true;
+    }
+
+    return false;
+}
+
+static bool
+authinfo_simple_query_error(const struct authinfo_parse_error_t *error,
+                            struct authinfo_simple_query_data_t *data)
+{
+    data->status = AUTHINFO_EPARSE;
+    *data->error = *error;
+    return true;
 }

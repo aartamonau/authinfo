@@ -40,6 +40,8 @@ enum authinfo_result_t {
     AUTHINFO_EGPGME_BAD_PASSPHRASE, /**< Invalid passphrase supplied. */
     AUTHINFO_EGPGME_BAD_BASE64, /**< Malformed base64-encoded password. */
     AUTHINFO_ENOGPGME,          /**< Library compiled without GPG support */
+    AUTHINFO_ENOMATCH,          /**< No matching entry was found. */
+    AUTHINFO_EPARSE,            /**< Parse error. */
     AUTHINFO_RESULT_MAX
 };
 
@@ -164,8 +166,9 @@ EXPORT_FUNCTION void authinfo_parse(const char *data, size_t size,
 
 /**
  * Extracts a password from #authinfo_password_t structure. Extracted password
- * is returned in @em data. Note that it is valid only during entry callback
- * execution. It should be copied, if longer lifetime is required.
+ * is returned in @em data. Note that returned value is valid only during
+ * lifetime of the containing #authinfo_parse_entry_t structure. It should be
+ * copied, if longer lifetime is required.
  *
  * @param password #authinfo_password_t structure to extract password from
  * @param[out] data extracted password is returned here
@@ -176,6 +179,41 @@ EXPORT_FUNCTION enum authinfo_result_t
 authinfo_password_extract(struct authinfo_password_t *password,
                           const char **data);
 
+/**
+ * Release resources held by the #authinfo_parse_entry_t structure returned by
+ * authinfo_simple_query() function. Note this function *must* not be called
+ * on the entries that are passed to the entry callback by authinfo_parse()
+ * function.
+ *
+ * @param entry an entry to free
+ */
+EXPORT_FUNCTION void
+authinfo_parse_entry_free(struct authinfo_parse_entry_t *entry);
+
+/**
+ * A shortcut function that looks for the first matching entry in the authinfo
+ * file.
+ *
+ * @param data authinfo file data
+ * @param size data size
+ * @param host host name to match; NULL matches any host name
+ * @param protocol protocol to match; NULL matches everything
+ * @param user user to match; NULL matches everything
+ * @param[out] entry parsed entry returned here in case of success; after it's
+ *             not needed anymore it should be freed by
+ *             authinfo_parse_entry_free() function
+ * @param[out] error parse error returned here if data could not be parsed
+ *
+ * @retval AUTHINFO_OK matching entry found
+ * @retval AUTHINFO_ENOMATCH no matching entry found
+ * @retval AUTHINFO_EPARSE data could not be parsed
+ * @retval AUTHINFO_ENOMEM could not allocate memory
+ */
+EXPORT_FUNCTION enum authinfo_result_t
+authinfo_simple_query(const char *data, size_t size,
+                      const char *host, const char *protocol, const char *user,
+                      struct authinfo_parse_entry_t *entry,
+                      struct authinfo_parse_error_t *error);
 
 #ifdef __cplusplus
 }
