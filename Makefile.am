@@ -23,6 +23,7 @@ libauthinfo_impl_la_SOURCES = $(top_srcdir)/src/authinfo_internal.h \
 lib_LTLIBRARIES = libauthinfo.la
 libauthinfo_la_SOURCES =
 libauthinfo_la_LIBADD = libauthinfo_impl.la
+libauthinfo_la_LDFLAGS = -version-info $(LIBAUTHINFO_VERSION_INFO)
 
 if BUILD_AUTHINFO_TOOL
 AUTHINFO = authinfo
