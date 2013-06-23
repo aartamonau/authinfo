@@ -39,3 +39,5 @@ lcov.info
 /docs/Doxyfile
 /docs/Makefile
 /docs/Makefile.in
+/py-compile
+/python/__init__.py

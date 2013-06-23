@@ -84,6 +84,23 @@ if test x$enable_authinfo_tool = xyes; then
   AC_CHECK_FUNCS([getopt_long])
 fi
 
+AC_ARG_ENABLE([python],
+  [AS_HELP_STRING([--enable-python],
+          [install python bindings @<:@default=yes@:>@])],
+   [enable_python="$enableval"],
+   [enable_python="yes"])
+
+if test x$enable_python = xyes; then
+   if test x$enable_shared != xyes; then
+      AC_MSG_ERROR("--enable-python requires --enable-shared")
+   fi
+
+   AM_PATH_PYTHON([2.5])
+   AC_CONFIG_FILES([python/__init__.py])
+fi
+
+AM_CONDITIONAL([ENABLE_PYTHON], [test x$enable_python = xyes])
+
 LIBAUTHINFO_INTERFACE=0
 LIBAUTHINFO_REVISION=0
 LIBAUTHINFO_AGE=0
