@@ -41,8 +41,8 @@ endif
 TESTS = $(check_PROGRAMS)
 
 authinfo_parsing_tests_SOURCES = $(top_srcdir)/tests/authinfo_parsing_tests.c
-authinfo_parsing_tests_LDADD = @CHECK_LIBS@ libauthinfo_impl.la
-authinfo_parsing_tests_CFLAGS = @CHECK_CFLAGS@ $(AM_CFLAGS)
+authinfo_parsing_tests_LDADD = $(CHECK_LIBS) libauthinfo_impl.la
+authinfo_parsing_tests_CFLAGS = $(CHECK_CFLAGS) $(AM_CFLAGS)
 
 clean-local:
 	find . \( -name "*.gcda" -o -name "*.gcno" -o -name "*.gcov" \) -delete
