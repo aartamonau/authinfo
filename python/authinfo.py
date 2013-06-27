@@ -63,6 +63,55 @@ authinfo_password_extract.argtypes = [c_void_p, POINTER(c_char_p)]
 
 
 class AuthinfoError(Exception):
+    '''
+    Represents various authinfo errors.
+
+    Error type is stored in `AuthinfoError.type`. Human-readable error message
+    is stored in `AuthinfoError.message`.
+
+    Error Types
+    -----------
+
+    `AuthinfoError.AUTHINFO_OK`
+       No error occurred
+
+    `AuthinfoError.AUTHINFO_EACCESS`
+       Authinfo file was inaccessible
+
+    `AuthinfoError.AUTHINFO_ENOENT`
+       Authinfo file could not be found
+
+    `AuthinfoError.AUTHINFO_ENOMEM`
+       Memory could not be allocated
+
+    `AuthinfoError.AUTHINFO_ETOOBIG`
+       Authinfo file content didn't fit into internal read buffer
+
+    `AuthinfoError.AUTHINFO_EUNKNOWN`
+       Unknown error occurred
+
+    `AuthinfoError.AUTHINFO_EGPGME`
+       Unexpected GPG error
+
+    `AuthinfoError.AUTHINFO_EGPGME_DECRYPT_FAILED`
+       Failed to decrypt authinfo file
+
+    `AuthinfoError.AUTHINFO_EGPGME_BAD_PASSPHRASE`
+       Bad passphrase supplied by user
+
+    `AuthinfoError.AUTHINFO_EGPGME_BAD_BASE64`
+       Malformed base64-encode password
+
+    `AuthinfoError.AUTHINFO_ENOGPGME`
+       Authinfo was built without GPG support
+
+    `AuthinfoError.AUTHINFO_ENOMATCH`
+       No matching entries found
+
+    `AuthinfoError.AUTHINFO_EPARSE`
+       Failed to parse authinfo file
+    '''
+
     __slots__ = ['type', 'msg']
 
     AUTHINFO_OK                    = 0
@@ -90,17 +139,73 @@ class AuthinfoError(Exception):
 
 
 class AuthinfoParseError(Exception):
+    '''
+    Represents parsing errors.
+
+    Error type is stored in `AuthinfoParseError.type`. Human-readable error
+    description is stored in `AuthinfoParseError.message`. Line and column
+    where the error occurred are stored in `AuthinfoParseError.line` and
+    `AuthinfoParseError.column` respectively.
+
+    Error types
+    -----------
+
+    `AuthinfoParseError.AUTHINFO_PET_NO_ERROR`
+       No error
+
+    `AuthinfoParseError.AUTHINFO_PET_MISSING_HOST`
+       Host name was not specified
+
+    `AuthinfoParseError.AUTHINFO_PET_MISSING_VALUE`
+       Value was not specified for an attribute
+
+    `AuthinfoParseError.AUTHINFO_PET_VALUE_TOO_LONG`
+       Token exceeds maximum supported size
+
+    `AuthinfoParseError.AUTHINFO_PET_BAD_VALUE`
+       Invalid value provided for an attribute
+
+    `AuthinfoParseError.AUTHINFO_PET_BAD_KEYWORD`
+       Unrecognized keyword used
+
+    `AuthinfoParseError.AUTHINFO_PET_DUPLICATED_KEYWORD`
+       Duplicate or synonymous attribute
+
+    `AuthinfoParseError.AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN`
+       No matching closing double quote
+
+    `AuthinfoParseError.AUTHINFO_PET_UNSUPPORTED_ESCAPE`
+       Unsupported escape sequence used
+    '''
+
     __slots__ = ['type', 'line', 'column', 'msg']
 
-    AUTHINFO_PET_NO_ERROR                  = 0
-    AUTHINFO_PET_MISSING_HOST              = 1
-    AUTHINFO_PET_MISSING_VALUE             = 2
-    AUTHINFO_PET_VALUE_TOO_LONG            = 3
-    AUTHINFO_PET_BAD_VALUE                 = 4
-    AUTHINFO_PET_BAD_KEYWORD               = 5
-    AUTHINFO_PET_DUPLICATED_KEYWORD        = 6
+    AUTHINFO_PET_NO_ERROR = 0
+    '''No error'''
+
+    AUTHINFO_PET_MISSING_HOST = 1
+    '''Host name was not specified'''
+
+    AUTHINFO_PET_MISSING_VALUE = 2
+    '''Value was not specified for an attribute'''
+
+    AUTHINFO_PET_VALUE_TOO_LONG = 3
+    '''Token exceeds maximum supported size'''
+
+    AUTHINFO_PET_BAD_VALUE = 4
+    '''Invalid value provided for an attribute'''
+
+    AUTHINFO_PET_BAD_KEYWORD = 5
+    '''Unrecognized keyword used'''
+
+    AUTHINFO_PET_DUPLICATED_KEYWORD = 6
+    '''Duplicate or synonymous attribute'''
+
     AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN = 7
-    AUTHINFO_PET_UNSUPPORTED_ESCAPE        = 8
+    '''No matching closing double quote'''
+
+    AUTHINFO_PET_UNSUPPORTED_ESCAPE = 8
+    '''Unsupported escape sequence used'''
 
     def __init__(self, c_error):
         super(AuthinfoParseError, self).__init__()
@@ -115,6 +220,16 @@ class AuthinfoParseError(Exception):
 
 
 class AuthinfoEntry(object):
+    '''
+    Represents a single entry in authinfo file.
+
+    `AuthinfoEntry.host`, `Authinfo.protocol`, `Authinfo.user`,
+    `Authinfo.password` and `Authinfo.force` contain corresponding attributes
+    of the entry. If some of the attributes were omitted, then the value will
+    be `None` (except for `Authinfo.force` which defaults to `False`).
+
+    '''
+
     __slots__ = ['host', 'protocol', 'user', 'password', 'force']
 
     def __init__(self, c_entry):
@@ -148,6 +263,11 @@ class AuthinfoEntry(object):
              self.host, self.protocol, self.user, self.password, self.force)
 
     def is_default(self):
+        '''
+        Returns `True` if the entry is the "default" entry. I.e. "default"
+        keyword was used for the entry instead of specifying concrete host name.
+        '''
+
         return self.host is None
 
 
@@ -182,6 +302,12 @@ class AuthinfoPath(object):
 
 
 def query(host=None, user=None, protocol=None, path=None):
+    '''
+    Find an entry matching `host`, `user` and `protocol`. Any of these can be
+    omitted. Optional `path` specifies a path to authinfo file that has to be
+    used.
+    '''
+
     c_path = AuthinfoPath(path)
 
     data = create_string_buffer(1 << 16)

@@ -1,5 +1,8 @@
 from ctypes import cdll
 from authinfo import *
 
+__all__ = ['__version__',
+           'AuthinfoError', 'AuthinfoParseError', 'AuthinfoEntry', 'query']
+
 __version__ = '@PACKAGE_VERSION@'
 libauthinfo_interface = @LIBAUTHINFO_INTERFACE@
