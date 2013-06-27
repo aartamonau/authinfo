@@ -42,3 +42,4 @@ lcov.info
 /py-compile
 /python/__init__.py
 /src/.dirstamp
+/tests/.dirstamp
