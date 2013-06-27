@@ -12,13 +12,13 @@ AM_LDFLAGS = $(GPGME_PTHREAD_LIBS)
 
 noinst_DATA = $(top_srcdir)/config.site/coverage
 
-include_HEADERS = $(top_srcdir)/include/authinfo.h
+include_HEADERS = include/authinfo.h
 
 noinst_LTLIBRARIES = libauthinfo_impl.la
-libauthinfo_impl_la_SOURCES = $(top_srcdir)/src/authinfo_internal.h \
-                              $(top_srcdir)/src/base64.h \
-                              $(top_srcdir)/src/authinfo.c \
-                              $(top_srcdir)/src/base64.c
+libauthinfo_impl_la_SOURCES = src/authinfo_internal.h \
+                              src/base64.h \
+                              src/authinfo.c \
+                              src/base64.c
 
 lib_LTLIBRARIES = libauthinfo.la
 libauthinfo_la_SOURCES =
@@ -30,7 +30,7 @@ AUTHINFO = authinfo
 endif
 
 bin_PROGRAMS = $(AUTHINFO)
-authinfo_SOURCES = $(top_srcdir)/src/main.c
+authinfo_SOURCES = src/main.c
 authinfo_LDADD = libauthinfo_impl.la
 
 if HAVE_CHECK
@@ -41,7 +41,7 @@ endif
 
 TESTS = $(check_PROGRAMS)
 
-authinfo_parsing_tests_SOURCES = $(top_srcdir)/tests/authinfo_parsing_tests.c
+authinfo_parsing_tests_SOURCES = tests/authinfo_parsing_tests.c
 authinfo_parsing_tests_LDADD = $(CHECK_LIBS) libauthinfo_impl.la
 authinfo_parsing_tests_CFLAGS = $(CHECK_CFLAGS) $(AM_CFLAGS)
 

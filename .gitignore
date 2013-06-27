@@ -41,3 +41,4 @@ lcov.info
 /docs/Makefile.in
 /py-compile
 /python/__init__.py
+/src/.dirstamp
