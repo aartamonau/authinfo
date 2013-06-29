@@ -54,7 +54,8 @@ enum authinfo_result_t {
  * accordingly. So you might want to call setlocale to set it to the desired
  * value.
  *
- * @return result
+ * @retval AUTHINFO_OK
+ * @retval AUTHINFO_EGPGME
  */
 EXPORT_FUNCTION enum authinfo_result_t authinfo_init(void);
 
@@ -72,7 +73,11 @@ EXPORT_FUNCTION const char *authinfo_strerror(enum authinfo_result_t status);
  *
  * @param[out] path Return authinfo file path here. Must be freed by the caller.
  *
- * @return status
+ * @retval AUTHINFO_OK
+ * @retval AUTHINFO_ENOMEM
+ * @retval AUTHINFO_ENOENT
+ * @retval AUTHINFO_EACCESS
+ * @retval AUTHINFO_EUNKNOWN
  */
 EXPORT_FUNCTION enum authinfo_result_t authinfo_find_file(char **path);
 
@@ -85,7 +90,15 @@ EXPORT_FUNCTION enum authinfo_result_t authinfo_find_file(char **path);
  *                     successfully the size of the actual data is returned
  *                     via this parameter
  *
- * @return status
+ * @retval AUTHINFO_OK
+ * @retval AUTHINFO_ENOGPGME
+ * @retval AUTHINFO_ETOOBIG
+ * @retval AUTHINFO_ENOENT
+ * @retval AUTHINFO_EACCESS
+ * @retval AUTHINFO_EUNKNOWN
+ * @retval AUTHINFO_EGPGME
+ * @retval AUTHINFO_EGPGME_DECRYPT_FAILED
+ * @retval AUTHINFO_EGPGME_BAD_PASSPHRASE
  */
 EXPORT_FUNCTION enum authinfo_result_t
 authinfo_read_file(const char *path, char *buffer, size_t *size);
@@ -173,7 +186,11 @@ EXPORT_FUNCTION void authinfo_parse(const char *data, size_t size,
  * @param password #authinfo_password_t structure to extract password from
  * @param[out] data extracted password is returned here
  *
- * @return status
+ * @retval AUTHINFO_OK
+ * @retval AUTHINFO_EGPGME
+ * @retval AUTHINFO_EGPGME_BAD_BASE64
+ * @retval AUTHINFO_EGPGME_DECRYPT_FAILED
+ * @retval AUTHINFO_EGPGME_BAD_PASSPHRASE
  */
 EXPORT_FUNCTION enum authinfo_result_t
 authinfo_password_extract(struct authinfo_password_t *password,
