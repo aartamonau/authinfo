@@ -116,6 +116,30 @@ TEST(read_file)
 }
 END_TEST
 
+TEST(gpged_password)
+{
+    char buffer[1024] = {0};
+    size_t buffer_size = sizeof(buffer);
+
+    struct authinfo_parse_entry_t entry;
+    struct authinfo_parse_error_t error;
+    const char *password;
+
+    AUTHINFO(authinfo_read_file(TOP_SRCDIR "/tests/files/gpg_tests/gpged_password",
+                                buffer, &buffer_size));
+    AUTHINFO(authinfo_simple_query(buffer, buffer_size, NULL, NULL, NULL,
+                                   &entry, &error));
+    AUTHINFO(authinfo_password_extract(entry.password, &password));
+
+    ck_assert_str_eq(entry.host, "host");
+    ck_assert_str_eq(entry.user, "user");
+    ck_assert_str_eq(entry.protocol, "protocol");
+    ck_assert_str_eq(password, "password");
+
+    authinfo_parse_entry_free(&entry);
+}
+END_TEST
+
 Suite *
 gpg_suite(void)
 {
@@ -128,6 +152,7 @@ gpg_suite(void)
     suite_add_tcase(s, tc_##name);
 
     TEST_CASE(read_file, "Reading encrypted/unencrypted files");
+    TEST_CASE(gpged_password, "Parsing file with encrypted password");
 
     return s;
 }
