@@ -45,7 +45,8 @@ authinfo_parsing_tests_SOURCES = tests/authinfo_parsing_tests.c
 authinfo_parsing_tests_LDADD = $(CHECK_LIBS) libauthinfo_impl.la
 authinfo_parsing_tests_CFLAGS = $(CHECK_CFLAGS) $(AM_CFLAGS)
 
-authinfo_gpg_tests_SOURCES = tests/authinfo_gpg_tests.c
+authinfo_gpg_tests_SOURCES = tests/authinfo_gpg_tests.c \
+                             tests/public_key.inc tests/private_key.inc
 authinfo_gpg_tests_LDADD = $(CHECK_LIBS) libauthinfo_impl.la
 authinfo_gpg_tests_CFLAGS = $(CHECK_CFLAGS) $(AM_CFLAGS)
 
