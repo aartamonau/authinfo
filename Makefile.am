@@ -34,7 +34,12 @@ authinfo_SOURCES = src/main.c
 authinfo_LDADD = libauthinfo_impl.la
 
 if HAVE_CHECK
-check_PROGRAMS = authinfo_parsing_tests authinfo_gpg_tests
+
+if HAVE_GPGME
+GPG_TESTS = authinfo_gpg_tests
+endif
+
+check_PROGRAMS = authinfo_parsing_tests $(GPG_TESTS)
 else
 check_PROGRAMS =
 endif

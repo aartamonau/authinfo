@@ -72,6 +72,8 @@ if test x$have_gpgme = xyes; then
    AC_DEFINE([HAVE_GPGME], [1], [Define to 1 if you want GPG support])
 fi
 
+AM_CONDITIONAL([HAVE_GPGME], [test x$have_gpgme = xyes])
+
 AC_ARG_ENABLE([authinfo-tool],
   [AS_HELP_STRING([--enable-authinfo-tool],
           [build standalone authinfo tool @<:@default=yes@:>@])],

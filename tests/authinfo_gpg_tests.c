@@ -1,7 +1,14 @@
 /* -*- mode: c; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*- */
 
+#include "config.h"
+
 #include <stdlib.h>
+#include <stdbool.h>
+#include <assert.h>
 #include <check.h>
+#include <gpgme.h>
+
+#include "authinfo.h"
 
 #include "public_key.inc"
 #include "private_key.inc"
