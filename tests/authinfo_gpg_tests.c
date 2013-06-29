@@ -10,9 +10,6 @@
 
 #include "authinfo.h"
 
-#include "public_key.inc"
-#include "private_key.inc"
-
 Suite *
 gpg_suite(void)
 {
@@ -26,9 +23,6 @@ main(void)
     int number_failed;
     Suite *s = gpg_suite();
     SRunner *sr = srunner_create(s);
-
-    (void) private_key;
-    (void) public_key;
 
     srunner_run_all(sr, CK_VERBOSE);
     number_failed = srunner_ntests_failed(sr);

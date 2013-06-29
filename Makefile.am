@@ -10,7 +10,9 @@ AM_CFLAGS = $(GCC_CFLAGS) $(GPGME_PTHREAD_CFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/include/ $(DEBUG_CPPFLAGS)
 AM_LDFLAGS = $(GPGME_PTHREAD_LIBS)
 
-EXTRA_DIST = $(top_srcdir)/config.site/coverage
+EXTRA_DIST = $(top_srcdir)/config.site/coverage \
+             $(top_srcdir)/tests/files/gpg_tests/public.key \
+             $(top_srcdir)/tests/files/gpg_tests/private.key
 
 include_HEADERS = include/authinfo.h
 
@@ -50,8 +52,7 @@ authinfo_parsing_tests_SOURCES = tests/authinfo_parsing_tests.c
 authinfo_parsing_tests_LDADD = $(CHECK_LIBS) libauthinfo_impl.la
 authinfo_parsing_tests_CFLAGS = $(CHECK_CFLAGS) $(AM_CFLAGS)
 
-authinfo_gpg_tests_SOURCES = tests/authinfo_gpg_tests.c \
-                             tests/public_key.inc tests/private_key.inc
+authinfo_gpg_tests_SOURCES = tests/authinfo_gpg_tests.c
 authinfo_gpg_tests_LDADD = $(CHECK_LIBS) libauthinfo_impl.la
 authinfo_gpg_tests_CFLAGS = $(CHECK_CFLAGS) $(AM_CFLAGS)
 
