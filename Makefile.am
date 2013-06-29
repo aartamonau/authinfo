@@ -15,7 +15,8 @@ EXTRA_DIST = $(top_srcdir)/config.site/coverage \
              $(top_srcdir)/tests/files/gpg_tests/private.key \
              $(top_srcdir)/tests/files/gpg_tests/read_file \
              $(top_srcdir)/tests/files/gpg_tests/read_file.gpg \
-             $(top_srcdir)/tests/files/gpg_tests/gpged_password
+             $(top_srcdir)/tests/files/gpg_tests/gpged_password \
+             $(top_srcdir)/tests/files/gpg_tests/gpged_password_bad
 
 include_HEADERS = include/authinfo.h
 
