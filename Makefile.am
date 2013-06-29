@@ -34,7 +34,7 @@ authinfo_SOURCES = src/main.c
 authinfo_LDADD = libauthinfo_impl.la
 
 if HAVE_CHECK
-check_PROGRAMS = authinfo_parsing_tests
+check_PROGRAMS = authinfo_parsing_tests authinfo_gpg_tests
 else
 check_PROGRAMS =
 endif
@@ -44,6 +44,10 @@ TESTS = $(check_PROGRAMS)
 authinfo_parsing_tests_SOURCES = tests/authinfo_parsing_tests.c
 authinfo_parsing_tests_LDADD = $(CHECK_LIBS) libauthinfo_impl.la
 authinfo_parsing_tests_CFLAGS = $(CHECK_CFLAGS) $(AM_CFLAGS)
+
+authinfo_gpg_tests_SOURCES = tests/authinfo_gpg_tests.c
+authinfo_gpg_tests_LDADD = $(CHECK_LIBS) libauthinfo_impl.la
+authinfo_gpg_tests_CFLAGS = $(CHECK_CFLAGS) $(AM_CFLAGS)
 
 if ENABLE_PYTHON
 pkgpython_PYTHON = python/__init__.py python/authinfo.py

@@ -25,6 +25,7 @@
 /*.log
 /*.trs
 /authinfo_parsing_tests
+/authinfo_gpg_tests
 /GPATH
 /GRTAGS
 /GTAGS
