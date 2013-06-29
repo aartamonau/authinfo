@@ -12,7 +12,9 @@ AM_LDFLAGS = $(GPGME_PTHREAD_LIBS)
 
 EXTRA_DIST = $(top_srcdir)/config.site/coverage \
              $(top_srcdir)/tests/files/gpg_tests/public.key \
-             $(top_srcdir)/tests/files/gpg_tests/private.key
+             $(top_srcdir)/tests/files/gpg_tests/private.key \
+             $(top_srcdir)/tests/files/gpg_tests/read_file \
+             $(top_srcdir)/tests/files/gpg_tests/read_file.gpg
 
 include_HEADERS = include/authinfo.h
 

@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <assert.h>
 #include <unistd.h>
 #include <check.h>
@@ -97,8 +98,21 @@ teardown(void)
     START_TEST(test_gpg_##name); \
     fprintf(stderr, "==Test: %s=====================\n", #name);
 
-TEST(dummy)
+TEST(read_file)
 {
+    char plain[1024] = {0};
+    char encrypted[1024] = {0};
+
+    size_t plain_size = sizeof(plain);
+    size_t encrypted_size = sizeof(encrypted);
+
+    AUTHINFO(authinfo_read_file(TOP_SRCDIR "/tests/files/gpg_tests/read_file.gpg",
+                                encrypted, &encrypted_size));
+    AUTHINFO(authinfo_read_file(TOP_SRCDIR "/tests/files/gpg_tests/read_file",
+                                plain, &plain_size));
+
+    ck_assert_uint_eq(plain_size, encrypted_size);
+    ck_assert(memcmp(plain, encrypted, plain_size) == 0);
 }
 END_TEST
 
@@ -113,7 +127,7 @@ gpg_suite(void)
     tcase_add_test(tc_##name, test_gpg_##name); \
     suite_add_tcase(s, tc_##name);
 
-    TEST_CASE(dummy, "Dummy test case");
+    TEST_CASE(read_file, "Reading encrypted/unencrypted files");
 
     return s;
 }
