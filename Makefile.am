@@ -10,7 +10,7 @@ AM_CFLAGS = $(GCC_CFLAGS) $(GPGME_PTHREAD_CFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/include/ $(DEBUG_CPPFLAGS)
 AM_LDFLAGS = $(GPGME_PTHREAD_LIBS)
 
-noinst_DATA = $(top_srcdir)/config.site/coverage
+EXTRA_DIST = $(top_srcdir)/config.site/coverage
 
 include_HEADERS = include/authinfo.h
 
