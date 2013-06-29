@@ -55,6 +55,7 @@ authinfo_parsing_tests_CFLAGS = $(CHECK_CFLAGS) $(AM_CFLAGS)
 authinfo_gpg_tests_SOURCES = tests/authinfo_gpg_tests.c
 authinfo_gpg_tests_LDADD = $(CHECK_LIBS) libauthinfo_impl.la
 authinfo_gpg_tests_CFLAGS = $(CHECK_CFLAGS) $(AM_CFLAGS)
+authinfo_gpg_tests_CPPFLAGS = -DTOP_SRCDIR='"$(top_srcdir)"' $(AM_CPPFLAGS)
 
 if ENABLE_PYTHON
 pkgpython_PYTHON = python/__init__.py python/authinfo.py
