@@ -39,6 +39,9 @@ bin_PROGRAMS = $(AUTHINFO)
 authinfo_SOURCES = src/main.c
 authinfo_LDADD = libauthinfo_impl.la
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = authinfo.pc
+
 if HAVE_CHECK
 
 if HAVE_GPGME

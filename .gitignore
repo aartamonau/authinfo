@@ -44,3 +44,4 @@ lcov.info
 /python/__init__.py
 /src/.dirstamp
 /tests/.dirstamp
+/authinfo.pc
