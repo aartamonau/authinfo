@@ -18,7 +18,7 @@ EXTRA_DIST = $(top_srcdir)/config.site/coverage \
              $(top_srcdir)/tests/files/gpg_tests/gpged_password \
              $(top_srcdir)/tests/files/gpg_tests/gpged_password_bad
 
-include_HEADERS = include/authinfo.h
+pkginclude_HEADERS = include/authinfo.h
 
 noinst_LTLIBRARIES = libauthinfo_impl.la
 libauthinfo_impl_la_SOURCES = src/authinfo_internal.h \
