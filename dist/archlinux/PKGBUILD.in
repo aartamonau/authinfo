@@ -1,0 +1,46 @@
+# -*- mode: pkgbuild; -*-
+# Maintainer:  Aliaksey Artamonau <aliaksiej.artamonau@gmail.com>
+
+pkgname=@PACKAGE_NAME@
+pkgver=@PACKAGE_VERSION@
+pkgrel=1
+pkgdesc="Library for parsing authinfo files"
+url="https://github.com/aartamonau/authinfo"
+arch=('i686' 'x86_64')
+license=('GPL')
+depends=('gpgme' 'python2')
+makedepends=('git')
+
+_gitroot=git@github.com:aartamonau/authinfo.git
+_gitname=authinfo
+
+build() {
+  cd "$srcdir"
+  msg "Connecting to GIT server...."
+
+  if [[ -d "$_gitname" ]]; then
+    cd "$_gitname" && git pull origin
+    msg "The local files are updated."
+  else
+    git clone "$_gitroot" "$_gitname"
+  fi
+
+  msg "GIT checkout done or server timeout"
+  msg "Starting build..."
+
+  rm -rf "$srcdir/$_gitname-build"
+  git clone "$srcdir/$_gitname" "$srcdir/$_gitname-build"
+  cd "$srcdir/$_gitname-build"
+
+  #
+  # BUILD HERE
+  #
+  ./bootstrap
+  ./configure --prefix=/usr --sysconfdir=/etc
+  make
+}
+
+package() {
+  cd "$srcdir/$_gitname-build"
+  make DESTDIR="$pkgdir/" install
+}

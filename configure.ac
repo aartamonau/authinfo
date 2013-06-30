@@ -6,7 +6,8 @@ LT_INIT([static])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/main.c])
-AC_CONFIG_FILES([Makefile docs/Makefile docs/Doxyfile authinfo.pc])
+AC_CONFIG_FILES([Makefile docs/Makefile docs/Doxyfile authinfo.pc]
+                [dist/archlinux/PKGBUILD])
 AC_CONFIG_HEADERS([config.h])
 
 AC_PROG_CC_C99
