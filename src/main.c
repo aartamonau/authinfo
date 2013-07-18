@@ -7,6 +7,8 @@
 #include <getopt.h>
 #include <string.h>
 #include <locale.h>
+#include <sys/resource.h>
+#include <errno.h>
 
 #include "config.h"
 #include "authinfo.h"
@@ -240,6 +242,21 @@ validate(void)
     }
 }
 
+void
+disable_core_dumps()
+{
+    struct rlimit limit;
+
+    if (getrlimit(RLIMIT_CORE, &limit) != 0) {
+        limit.rlim_max = 0;
+    }
+
+    limit.rlim_cur = 0;
+    if (setrlimit(RLIMIT_CORE, &limit) != 0) {
+        fprintf(stderr, "Couldn't disable core dumps: %s\n", strerror(errno));
+    }
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -289,6 +306,8 @@ main(int argc, char *argv[])
             assert(false);
         }
     }
+
+    disable_core_dumps();
 
     switch (command) {
     case CMD_QUERY:
