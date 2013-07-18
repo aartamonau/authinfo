@@ -75,8 +75,7 @@ struct authinfo_simple_query_data_t {
 static enum authinfo_result_t authinfo_gpgme_init(void);
 
 static enum authinfo_result_t
-authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size,
-                       gpgme_data_encoding_t encoding);
+authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size);
 
 static enum authinfo_result_t
 authinfo_gpgme_error2result(gpgme_error_t error);
@@ -223,8 +222,7 @@ authinfo_read_file(const char *path, char *buffer, size_t *size)
     if (authinfo_is_gpged_file(path)) {
 #ifdef HAVE_GPGME
         assert(data_size <= *size);
-        ret = authinfo_gpgme_decrypt(buffer, &data_size, *size,
-                                     GPGME_DATA_ENCODING_NONE);
+        ret = authinfo_gpgme_decrypt(buffer, &data_size, *size);
 #else
         ret = AUTHINFO_ENOGPGME;
 #endif  /* HAVE_GPGME */
@@ -533,8 +531,7 @@ authinfo_password_extract(struct authinfo_password_t *password,
 
             assert(data_length < password_length);
             ret = authinfo_gpgme_decrypt(raw_password, &data_length,
-                                         TOKEN_SIZE_MAX - 1,
-                                         GPGME_DATA_ENCODING_NONE);
+                                         TOKEN_SIZE_MAX - 1);
             if (ret == AUTHINFO_OK) {
                 assert(data_length < TOKEN_SIZE_MAX);
 
@@ -628,8 +625,7 @@ authinfo_gpgme_init(void)
 }
 
 static enum authinfo_result_t
-authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size,
-                       gpgme_data_encoding_t encoding)
+authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size)
 {
     gpgme_error_t gpgme_ret;
     gpgme_ctx_t ctx;
@@ -653,7 +649,7 @@ authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size,
         goto gpgme_decrypt_release_ctx;
     }
 
-    gpgme_ret = gpgme_data_set_encoding(cipher, encoding);
+    gpgme_ret = gpgme_data_set_encoding(cipher, GPGME_DATA_ENCODING_NONE);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
         TRACE_GPGME_ERROR("Could not set buffer data encoding", gpgme_ret);
         ret = authinfo_gpgme_error2result(gpgme_ret);
