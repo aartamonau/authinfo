@@ -209,6 +209,7 @@ EXPORT_FUNCTION void authinfo_parse(const struct authinfo_data_t *data,
  * @param[out] data extracted password is returned here
  *
  * @retval AUTHINFO_OK
+ * @retval AUTHINFO_ENOGPGME
  * @retval AUTHINFO_EGPGME
  * @retval AUTHINFO_EGPGME_BAD_BASE64
  * @retval AUTHINFO_EGPGME_DECRYPT_FAILED
