@@ -81,14 +81,29 @@ EXPORT_FUNCTION const char *authinfo_strerror(enum authinfo_result_t status);
  */
 EXPORT_FUNCTION enum authinfo_result_t authinfo_find_file(char **path);
 
+struct authinfo_data_t;
+
 /**
- * Read file contents into a buffer
+ * Create #authinfo_data_t from user buffer.
+ *
+ * @param buffer buffer
+ * @param size size of the buffer
+ * @param[out] data resulting data object
+ *
+ * @retval AUTHINFO_OK
+ * @retval AUTHINFO_ENOMEM
+ */
+EXPORT_FUNCTION enum authinfo_result_t
+authinfo_data_from_mem(const char *buffer, size_t size,
+                       struct authinfo_data_t **data);
+
+/**
+ * Create #authinfo_data_t object from file contents. If the file has .gpg
+ * extension, it's considered to be gpg-encrypted and it's automatically
+ * decrypted.
  *
  * @param path file path
- * @param buffer buffer to read the file into
- * @param[in,out] size buffer size; after authinfo_read_file() completes
- *                     successfully the size of the actual data is returned
- *                     via this parameter
+ * @param[out] data resulting data object
  *
  * @retval AUTHINFO_OK
  * @retval AUTHINFO_ENOGPGME
@@ -101,7 +116,15 @@ EXPORT_FUNCTION enum authinfo_result_t authinfo_find_file(char **path);
  * @retval AUTHINFO_EGPGME_BAD_PASSPHRASE
  */
 EXPORT_FUNCTION enum authinfo_result_t
-authinfo_read_file(const char *path, char *buffer, size_t *size);
+authinfo_data_from_file(const char *path, struct authinfo_data_t **data);
+
+/**
+ * Free a data object.
+ *
+ * @param data data object to free
+ */
+EXPORT_FUNCTION void
+authinfo_data_free(struct authinfo_data_t *data);
 
 /// Opaque representation of a password.
 struct authinfo_password_t;
@@ -166,13 +189,12 @@ typedef bool
 /**
  * Parse authinfo file.
  *
- * @param data data to parse
- * @param size size of the data
+ * @param data data object to parse
  * @param arg arbitrary argument that will be passed to callbacks
  * @param entry_callback a callback to be called for every parsed entry
  * @param error_callback a callback to be called for every parsing error
  */
-EXPORT_FUNCTION void authinfo_parse(const char *data, size_t size,
+EXPORT_FUNCTION void authinfo_parse(const struct authinfo_data_t *data,
                                     void *arg,
                                     authinfo_parse_entry_cb_t entry_callback,
                                     authinfo_parse_error_cb_t error_callback);
@@ -211,8 +233,7 @@ authinfo_parse_entry_free(struct authinfo_parse_entry_t *entry);
  * A shortcut function that looks for the first matching entry in the authinfo
  * file.
  *
- * @param data authinfo file data
- * @param size data size
+ * @param data data object to parse
  * @param host host name to match; NULL matches any host name
  * @param protocol protocol to match; NULL matches everything
  * @param user user to match; NULL matches everything
@@ -227,7 +248,7 @@ authinfo_parse_entry_free(struct authinfo_parse_entry_t *entry);
  * @retval AUTHINFO_ENOMEM could not allocate memory
  */
 EXPORT_FUNCTION enum authinfo_result_t
-authinfo_simple_query(const char *data, size_t size,
+authinfo_simple_query(const struct authinfo_data_t *data,
                       const char *host, const char *protocol, const char *user,
                       struct authinfo_parse_entry_t *entry,
                       struct authinfo_parse_error_t *error);

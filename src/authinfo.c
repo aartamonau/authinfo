@@ -30,8 +30,16 @@
 #define GPG_PREFIX "gpg:"
 #define TOKEN_SIZE_MAX 8192
 
+struct authinfo_data_t {
+    enum { STATIC, ALLOCATED } type;
+    enum { USER, MALLOC, GPGME } buffer_type;
+
+    const char *buffer;
+    size_t size;
+};
+
 struct authinfo_password_t {
-    char data[TOKEN_SIZE_MAX];
+    struct authinfo_data_t *data;
     bool encrypted;
 };
 
@@ -75,7 +83,8 @@ struct authinfo_simple_query_data_t {
 static enum authinfo_result_t authinfo_gpgme_init(void);
 
 static enum authinfo_result_t
-authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size);
+authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
+                       struct authinfo_data_t **plain_text);
 
 static enum authinfo_result_t
 authinfo_gpgme_error2result(gpgme_error_t error);
@@ -99,8 +108,7 @@ static enum authinfo_result_t
 authinfo_find_file_in_dir(const char *dir, const char *name, char **pathp);
 
 static enum authinfo_result_t
-authinfo_do_read_file(const char *path, char *buffer,
-                      size_t buffer_size, size_t *data_size);
+authinfo_do_read_file(const char *path, struct authinfo_data_t **data);
 
 static int
 authinfo_lookahead(struct authinfo_stream_t *stream);
@@ -146,6 +154,19 @@ authinfo_simple_query_entry(const struct authinfo_parse_entry_t *entry,
 static bool
 authinfo_simple_query_error(const struct authinfo_parse_error_t *error,
                             struct authinfo_simple_query_data_t *data);
+
+static enum authinfo_result_t
+authinfo_b64decode(const struct authinfo_data_t *b64data,
+                   struct authinfo_data_t **data);
+
+static enum authinfo_result_t
+authinfo_null_terminate(const struct authinfo_data_t *input,
+                        struct authinfo_data_t **output);
+
+static enum authinfo_result_t
+authinfo_data_copy(const struct authinfo_data_t *data,
+                   struct authinfo_data_t **copy);
+
 /* internal functions prototypes end */
 
 enum authinfo_result_t
@@ -209,27 +230,70 @@ authinfo_find_file(char **path)
 }
 
 enum authinfo_result_t
-authinfo_read_file(const char *path, char *buffer, size_t *size)
+authinfo_data_from_mem(const char *buffer, size_t size,
+                       struct authinfo_data_t **data)
+{
+    *data = malloc(sizeof(**data));
+    if (*data == NULL) {
+        return AUTHINFO_ENOMEM;
+    }
+
+    (*data)->type = ALLOCATED;
+    (*data)->buffer_type = USER;
+    (*data)->buffer = buffer;
+    (*data)->size = size;
+
+    return AUTHINFO_OK;
+}
+
+void
+authinfo_data_free(struct authinfo_data_t *data)
+{
+    switch (data->buffer_type) {
+    case USER:
+        break;
+    case MALLOC:
+        free((void *) data->buffer);
+        break;
+    case GPGME:
+        gpgme_free((void *) data->buffer);
+        break;
+    default:
+        assert(false);
+    }
+
+    if (data->type == ALLOCATED) {
+        free(data);
+    }
+}
+
+enum authinfo_result_t
+authinfo_data_from_file(const char *path, struct authinfo_data_t **data)
 {
     enum authinfo_result_t ret;
-    size_t data_size;
 
-    ret = authinfo_do_read_file(path, buffer, *size, &data_size);
+    /* suppress bogus gcc warning about uninitialized use of file_data */
+    struct authinfo_data_t *file_data = file_data;
+
+    ret = authinfo_do_read_file(path, &file_data);
     if (ret != AUTHINFO_OK) {
         return ret;
     }
 
     if (authinfo_is_gpged_file(path)) {
 #ifdef HAVE_GPGME
-        assert(data_size <= *size);
-        ret = authinfo_gpgme_decrypt(buffer, &data_size, *size);
+        struct authinfo_data_t *decrypted_data;
+
+        ret = authinfo_gpgme_decrypt(file_data, &decrypted_data);
+        *data = decrypted_data;
 #else
         ret = AUTHINFO_ENOGPGME;
 #endif  /* HAVE_GPGME */
-    }
 
-    if (ret == AUTHINFO_OK) {
-        *size = data_size;
+        authinfo_data_free(file_data);
+    } else {
+        *data = file_data;
+        ret = AUTHINFO_OK;
     }
 
     return ret;
@@ -270,7 +334,7 @@ const char *parse_state2str(enum parse_state_t state)
 #endif
 
 void
-authinfo_parse(const char *data, size_t size,
+authinfo_parse(const struct authinfo_data_t *data,
                void *arg,
                authinfo_parse_entry_cb_t entry_callback,
                authinfo_parse_error_cb_t error_callback)
@@ -278,6 +342,12 @@ authinfo_parse(const char *data, size_t size,
     char host[TOKEN_SIZE_MAX];
     char protocol[TOKEN_SIZE_MAX];
     char user[TOKEN_SIZE_MAX];
+
+    char password_buffer[TOKEN_SIZE_MAX];
+    struct authinfo_data_t password_data = { .type = STATIC,
+                                             .buffer_type = USER,
+                                             .buffer = password_buffer,
+                                             .size = TOKEN_SIZE_MAX };
     struct authinfo_password_t password;
 
     struct authinfo_parse_entry_t entry;
@@ -287,8 +357,8 @@ authinfo_parse(const char *data, size_t size,
     enum parse_state_t state = LINE_START;
 
     struct authinfo_stream_t stream = {
-        .data = data,
-        .size = size,
+        .data = data->buffer,
+        .size = data->size,
         .line = 1,
         .column = 0,
     };
@@ -354,6 +424,14 @@ authinfo_parse(const char *data, size_t size,
         case LINE_END:
             stop = authinfo_report_entry(entry_callback, error_callback, arg,
                                          stream.line, &entry);
+
+            if (entry.password != NULL) {
+                /* authinfo_password_extract may be called on a password in the
+                 * callback; and it can allocate new data buffer; so we need to
+                 * free it here */
+                authinfo_data_free(entry.password->data);
+            }
+
             authinfo_skip_line(&stream);
             state = LINE_START;
             break;
@@ -455,7 +533,8 @@ authinfo_parse(const char *data, size_t size,
                     break;
                 case WAITING_PASSWORD:
                     if (entry.password == NULL) {
-                        strcpy(password.data, token);
+                        strcpy(password_buffer, token);
+                        password.data = &password_data;
                         password.encrypted = authinfo_is_gpged_password(token);
                         entry.password = &password;
                     }
@@ -510,50 +589,49 @@ enum authinfo_result_t
 authinfo_password_extract(struct authinfo_password_t *password,
                           const char **data)
 {
-    enum authinfo_result_t ret = AUTHINFO_OK;
+    enum authinfo_result_t ret;
 
     if (password->encrypted) {
 #ifdef HAVE_GPGME
-        int n;
-        size_t password_length = strlen(password->data) - strlen(GPG_PREFIX);
-        char b64_password[password_length + 1];
-        char raw_password[TOKEN_SIZE_MAX];
+        struct authinfo_data_t *raw;
+        struct authinfo_data_t *plain;
+        struct authinfo_data_t *plainz;
 
-        assert(password_length < TOKEN_SIZE_MAX);
-
-        strcpy(b64_password, password->data + strlen(GPG_PREFIX));
-        n = base64_decode((uint8_t *) raw_password,
-                          b64_password, TOKEN_SIZE_MAX);
-        if (n == -1) {
-            ret = AUTHINFO_EGPGME_BAD_BASE64;
-        } else {
-            size_t data_length = n;
-
-            assert(data_length < password_length);
-            ret = authinfo_gpgme_decrypt(raw_password, &data_length,
-                                         TOKEN_SIZE_MAX - 1);
-            if (ret == AUTHINFO_OK) {
-                assert(data_length < TOKEN_SIZE_MAX);
-
-                memcpy(password->data, raw_password, data_length);
-                password->data[data_length] = '\0';
-                password->encrypted = false; /* in case we are called again */
-            }
+        ret = authinfo_b64decode(password->data, &raw);
+        if (ret != AUTHINFO_OK) {
+            return ret;
         }
+
+        ret = authinfo_gpgme_decrypt(raw, &plain);
+        if (ret != AUTHINFO_OK) {
+            authinfo_data_free(raw);
+            return ret;
+        }
+
+        ret = authinfo_null_terminate(plain, &plainz);
+        if (ret != AUTHINFO_OK) {
+            authinfo_data_free(raw);
+            authinfo_data_free(plain);
+            return ret;
+        }
+
+        authinfo_data_free(raw);
+        authinfo_data_free(plain);
+        authinfo_data_free(password->data);
+
+        password->data = plainz;
+        password->encrypted = false;
 #else
-        ret = AUTHINFO_ENOGPGME;
+        return AUTHINFO_ENOGPGME;
 #endif
     }
 
-    if (ret == AUTHINFO_OK) {
-        *data = password->data;
-    }
-
-    return ret;
+    *data = password->data->buffer;
+    return AUTHINFO_OK;
 }
 
 enum authinfo_result_t
-authinfo_simple_query(const char *data, size_t size,
+authinfo_simple_query(const struct authinfo_data_t *data,
                       const char *host, const char *protocol, const char *user,
                       struct authinfo_parse_entry_t *entry,
                       struct authinfo_parse_error_t *error)
@@ -568,7 +646,7 @@ authinfo_simple_query(const char *data, size_t size,
         .error = error,
     };
 
-    authinfo_parse(data, size, (void *) &arg,
+    authinfo_parse(data, (void *) &arg,
                    (authinfo_parse_entry_cb_t) authinfo_simple_query_entry,
                    (authinfo_parse_error_cb_t) authinfo_simple_query_error);
 
@@ -591,6 +669,7 @@ authinfo_parse_entry_free(struct authinfo_parse_entry_t *entry)
     }
 
     if (entry->password != NULL) {
+        authinfo_data_free(entry->password->data);
         free((void *) entry->password);
     }
 }
@@ -625,16 +704,15 @@ authinfo_gpgme_init(void)
 }
 
 static enum authinfo_result_t
-authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size)
+authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
+                       struct authinfo_data_t **plain_text)
 {
     gpgme_error_t gpgme_ret;
     gpgme_ctx_t ctx;
     gpgme_data_t cipher;
     gpgme_data_t plain;
-    char *plain_data;
-    size_t plain_length;
 
-    enum authinfo_result_t ret = AUTHINFO_OK;
+    enum authinfo_result_t ret;
 
     gpgme_ret = gpgme_new(&ctx);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
@@ -642,7 +720,9 @@ authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size)
         return authinfo_gpgme_error2result(gpgme_ret);
     }
 
-    gpgme_ret = gpgme_data_new_from_mem(&cipher, buf, *data_size, 1);
+    gpgme_ret = gpgme_data_new_from_mem(&cipher,
+                                        cipher_text->buffer,
+                                        cipher_text->size, 0);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
         TRACE_GPGME_ERROR("Could not create GPGME data buffer", gpgme_ret);
         ret = authinfo_gpgme_error2result(gpgme_ret);
@@ -656,11 +736,17 @@ authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size)
         goto gpgme_decrypt_release_cipher;
     }
 
+    *plain_text = malloc(sizeof(**plain_text));
+    if (*plain_text == NULL) {
+        ret = AUTHINFO_ENOMEM;
+        goto gpgme_decrypt_release_cipher;
+    }
+
     gpgme_ret = gpgme_data_new(&plain);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
         TRACE_GPGME_ERROR("Could not create GPGME data buffer", gpgme_ret);
         ret = authinfo_gpgme_error2result(gpgme_ret);
-        goto gpgme_decrypt_release_cipher;
+        goto gpgme_decrypt_free_plain_text;
     }
 
     gpgme_ret = gpgme_op_decrypt(ctx, cipher, plain);
@@ -670,19 +756,18 @@ authinfo_gpgme_decrypt(char *buf, size_t *data_size, size_t buf_size)
         goto gpgme_decrypt_release_plain;
     }
 
-    plain_data = gpgme_data_release_and_get_mem(plain, &plain_length);
-    if (plain_length > buf_size) {
-        ret = AUTHINFO_ETOOBIG;
-    } else {
-        memcpy(buf, plain_data, plain_length);
-        *data_size = plain_length;
-    }
+    (*plain_text)->type = ALLOCATED;
+    (*plain_text)->buffer_type = GPGME;
+    (*plain_text)->buffer = gpgme_data_release_and_get_mem(plain,
+                                                           &(*plain_text)->size);
 
-    gpgme_free(plain_data);
+    ret = AUTHINFO_OK;
     goto gpgme_decrypt_release_cipher;
 
 gpgme_decrypt_release_plain:
     gpgme_data_release(plain);
+gpgme_decrypt_free_plain_text:
+    free(*plain_text);
 gpgme_decrypt_release_cipher:
     gpgme_data_release(cipher);
 gpgme_decrypt_release_ctx:
@@ -833,11 +918,15 @@ authinfo_path_probe(const char *path)
 }
 
 static enum authinfo_result_t
-authinfo_do_read_file(const char *path, char *buffer,
-                      size_t buffer_size, size_t *data_size)
+authinfo_do_read_file(const char *path, struct authinfo_data_t **data)
 {
     int fd;
-    char *buffer_start = buffer;
+    int ret;
+
+    char *buffer;
+    size_t buffer_size;
+
+    struct stat stat;
 
     while (true) {
         fd = open(path, O_RDONLY);
@@ -853,14 +942,34 @@ authinfo_do_read_file(const char *path, char *buffer,
         }
     }
 
+    if (fstat(fd, &stat) != 0) {
+        TRACE("Could not stat %s: %s", path, strerror(errno));
+        return authinfo_errno2result(errno);
+    }
+
+    *data = malloc(sizeof(**data));
+    if (*data == NULL) {
+        return AUTHINFO_ENOMEM;
+    }
+
+    buffer_size = stat.st_size;
+    buffer = malloc(buffer_size);
+    if (buffer == NULL) {
+        TRACE("Could not allocate buffer for %s", path);
+        free(*data);
+        return AUTHINFO_ENOMEM;
+    }
+
+    (*data)->type = ALLOCATED;
+    (*data)->buffer_type = MALLOC;
+    (*data)->buffer = buffer;
+    (*data)->size = 0;
+
     while (true) {
         ssize_t nread;
 
         if (buffer_size == 0) {
-            /* it's not completely correct to return an error here because
-             * it's possible that the file is exactly the size of the buffer;
-             * but we'll ignore this rare case */
-            return AUTHINFO_ETOOBIG;
+            break;
         }
 
         nread = read(fd, buffer, MIN(buffer_size, 0xffff));
@@ -869,19 +978,23 @@ authinfo_do_read_file(const char *path, char *buffer,
                 continue;
             } else {
                 TRACE("Could not read authinfo file: %s\n", strerror(errno));
-                return authinfo_errno2result(errno);
+                ret = authinfo_errno2result(errno);
+                goto do_read_file_error;
             }
         } else if (nread == 0) {
             assert(buffer_size != 0);
-            *data_size = buffer - buffer_start;
-            return AUTHINFO_OK;
+            break;
         }
 
-        assert(buffer_size >= nread);
-
         buffer_size -= nread;
-        buffer += nread;
+        (*data)->size += nread;
     }
+
+    return AUTHINFO_OK;
+
+do_read_file_error:
+    authinfo_data_free(*data);
+    return ret;
 }
 
 static int
@@ -1017,7 +1130,7 @@ authinfo_report_entry(authinfo_parse_entry_cb_t entry_callback,
     TRACE("Reporting an entry: host -> %s, protocol -> %s, "
           "user -> %s, password -> %s, force -> %d\n",
           e.host, e.protocol, e.user,
-          e.password ? e.password->data : "(null)",
+          e.password ? e.password->data->buffer : "(null)",
           (int) e.force);
     stop = (*entry_callback)(&e, arg);
     TRACE("    ====> %s\n", stop ? "stopping" : "continuing");
@@ -1220,13 +1333,26 @@ authinfo_simple_query_entry(const struct authinfo_parse_entry_t *entry,
         }
 
         if (entry->password != NULL) {
-            data->entry->password = malloc(sizeof(*entry->password));
-            if (data->entry->password == NULL) {
+            enum authinfo_result_t ret;
+            struct authinfo_password_t *password;
+            struct authinfo_data_t *password_data;
+
+            password = malloc(sizeof(*entry->password));
+            if (password == NULL) {
                 goto simple_query_entry_error;
             }
 
-            memcpy(data->entry->password, entry->password,
-                   sizeof(*entry->password));
+            ret = authinfo_data_copy(entry->password->data, &password_data);
+            if (ret != AUTHINFO_OK) {
+                assert(ret == AUTHINFO_ENOMEM);
+                free(password);
+                goto simple_query_entry_error;
+            }
+
+            password->encrypted = entry->password->encrypted;
+            password->data = password_data;
+
+            data->entry->password = password;
         }
 
         data->status = AUTHINFO_OK;
@@ -1248,4 +1374,92 @@ authinfo_simple_query_error(const struct authinfo_parse_error_t *error,
     data->status = AUTHINFO_EPARSE;
     *data->error = *error;
     return true;
+}
+
+static enum authinfo_result_t
+authinfo_b64decode(const struct authinfo_data_t *b64data,
+                   struct authinfo_data_t **data)
+{
+    int ret;
+
+    *data = malloc(sizeof(**data));
+    if (*data == NULL) {
+        return AUTHINFO_ENOMEM;
+    }
+
+    (*data)->buffer = malloc(b64data->size);
+    if ((*data)->buffer == NULL) {
+        free(*data);
+        return AUTHINFO_ENOMEM;
+    }
+
+    (*data)->type = ALLOCATED;
+    (*data)->buffer_type = MALLOC;
+
+    ret = base64_decode((uint8_t *) (*data)->buffer,
+                        b64data->buffer + strlen(GPG_PREFIX), b64data->size);
+    if (ret == -1) {
+        authinfo_data_free(*data);
+        return AUTHINFO_EGPGME_BAD_BASE64;
+    }
+
+    (*data)->size = ret;
+    return AUTHINFO_OK;
+}
+
+static enum authinfo_result_t
+authinfo_null_terminate(const struct authinfo_data_t *input,
+                        struct authinfo_data_t **output)
+{
+    char *buffer;
+    size_t size;
+
+    *output = malloc(sizeof(**output));
+    if (*output == NULL) {
+        return AUTHINFO_ENOMEM;
+    }
+
+    size = input->size + 1;
+    buffer = malloc(size);
+    if (buffer == NULL) {
+        free(*output);
+        return AUTHINFO_ENOMEM;
+    }
+
+    memcpy(buffer, input->buffer, input->size);
+    buffer[size - 1] = '\0';
+
+    (*output)->type = ALLOCATED;
+    (*output)->buffer_type = MALLOC;
+    (*output)->buffer = buffer;
+    (*output)->size = size;
+
+    return AUTHINFO_OK;
+}
+
+static enum authinfo_result_t
+authinfo_data_copy(const struct authinfo_data_t *data,
+                   struct authinfo_data_t **copy)
+{
+    char *buffer;
+
+    *copy = malloc(sizeof(**copy));
+    if (*copy == NULL) {
+        return AUTHINFO_ENOMEM;
+    }
+
+    buffer = malloc(data->size);
+    if (buffer == NULL) {
+        free(*copy);
+        return AUTHINFO_ENOMEM;
+    }
+
+    memcpy(buffer, data->buffer, data->size);
+
+    (*copy)->type = ALLOCATED;
+    (*copy)->buffer = buffer;
+    (*copy)->buffer_type = MALLOC;
+    (*copy)->size = data->size;
+
+    return AUTHINFO_OK;
 }

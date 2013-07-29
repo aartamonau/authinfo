@@ -95,13 +95,13 @@ maybe_find_file(void)
 }
 
 static void
-read_file(char *buffer, size_t *size)
+read_file(struct authinfo_data_t **data)
 {
     enum authinfo_result_t ret;
 
     assert(authinfo_path);
 
-    ret = authinfo_read_file(authinfo_path, buffer, size);
+    ret = authinfo_data_from_file(authinfo_path, data);
     if (ret != AUTHINFO_OK) {
         authinfo_error(ret, "couldn't read authinfo file");
     }
@@ -171,21 +171,20 @@ query_process_entry(const struct authinfo_parse_entry_t *entry)
 static void
 query(void)
 {
-    char buffer[1 << 16];
-    size_t size = sizeof(buffer);
-
     enum authinfo_result_t ret;
     struct authinfo_parse_entry_t entry;
     struct authinfo_parse_error_t error;
+    struct authinfo_data_t *data;
 
     int status = EXIT_SUCCESS;
 
     init_authinfo();
     maybe_find_file();
-    read_file(buffer, &size);
+    read_file(&data);
 
-    ret = authinfo_simple_query(buffer, size, host, protocol, user,
+    ret = authinfo_simple_query(data, host, protocol, user,
                                 &entry, &error);
+    authinfo_data_free(data);
     switch (ret) {
     case AUTHINFO_OK:
         query_process_entry(&entry);
@@ -225,15 +224,16 @@ validate_entry(const struct authinfo_parse_entry_t *entry, void *arg)
 static void
 validate(void)
 {
-    char buffer[1 << 16];
-    size_t size = sizeof(buffer);
+    struct authinfo_data_t *data;
 
     init_authinfo();
     maybe_find_file();
-    read_file(buffer, &size);
+    read_file(&data);
 
     printf("Parsing %s.\n", authinfo_path);
-    authinfo_parse(buffer, size, NULL, validate_entry, validate_error);
+    authinfo_parse(data, NULL, validate_entry, validate_error);
+
+    authinfo_data_free(data);
 
     if (error_count == 0) {
         printf("  No errors found\n");
