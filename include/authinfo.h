@@ -119,6 +119,19 @@ EXPORT_FUNCTION enum authinfo_result_t
 authinfo_data_from_file(const char *path, struct authinfo_data_t **data);
 
 /**
+ * Get a size and a pointer to a memory associated with data object. Note that
+ * this returns a pointer to the actual underlying memory used by the data
+ * object. So its life-time is the same as a life-time of the data object.
+ *
+ * @param data data object
+ * @param[out] mem pointer to memory region
+ * @param[out] size size
+ */
+EXPORT_FUNCTION void
+authinfo_data_get_mem(const struct authinfo_data_t *data,
+                      const char **mem, size_t *size);
+
+/**
  * Free a data object.
  *
  * @param data data object to free

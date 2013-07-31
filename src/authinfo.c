@@ -247,6 +247,14 @@ authinfo_data_from_mem(const char *buffer, size_t size,
 }
 
 void
+authinfo_data_get_mem(const struct authinfo_data_t *data,
+                      const char **mem, size_t *size)
+{
+    *mem = data->buffer;
+    *size = data->size;
+}
+
+void
 authinfo_data_free(struct authinfo_data_t *data)
 {
     switch (data->buffer_type) {
