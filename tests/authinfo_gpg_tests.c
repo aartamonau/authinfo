@@ -100,35 +100,43 @@ teardown(void)
 
 TEST(read_file)
 {
-    char plain[1024] = {0};
-    char encrypted[1024] = {0};
+    struct authinfo_data_t *plain_data;
+    struct authinfo_data_t *encrypted_data;
 
-    size_t plain_size = sizeof(plain);
-    size_t encrypted_size = sizeof(encrypted);
+    const char *plain;
+    const char *encrypted;
 
-    AUTHINFO(authinfo_read_file(TOP_SRCDIR "/tests/files/gpg_tests/read_file.gpg",
-                                encrypted, &encrypted_size));
-    AUTHINFO(authinfo_read_file(TOP_SRCDIR "/tests/files/gpg_tests/read_file",
-                                plain, &plain_size));
+    size_t plain_size;
+    size_t encrypted_size;
+
+    AUTHINFO(authinfo_data_from_file(
+                 TOP_SRCDIR "/tests/files/gpg_tests/read_file.gpg",
+                 &encrypted_data));
+    AUTHINFO(authinfo_data_from_file(
+                 TOP_SRCDIR "/tests/files/gpg_tests/read_file", &plain_data));
+
+    authinfo_data_get_mem(encrypted_data, &encrypted, &encrypted_size);
+    authinfo_data_get_mem(plain_data, &plain, &plain_size);
 
     ck_assert_uint_eq(plain_size, encrypted_size);
     ck_assert(memcmp(plain, encrypted, plain_size) == 0);
+
+    authinfo_data_free(encrypted_data);
+    authinfo_data_free(plain_data);
 }
 END_TEST
 
 TEST(gpged_password)
 {
-    char buffer[1024] = {0};
-    size_t buffer_size = sizeof(buffer);
+    struct authinfo_data_t *data;
 
     struct authinfo_parse_entry_t entry;
     struct authinfo_parse_error_t error;
     const char *password;
 
-    AUTHINFO(authinfo_read_file(TOP_SRCDIR "/tests/files/gpg_tests/gpged_password",
-                                buffer, &buffer_size));
-    AUTHINFO(authinfo_simple_query(buffer, buffer_size, NULL, NULL, NULL,
-                                   &entry, &error));
+    AUTHINFO(authinfo_data_from_file(
+                 TOP_SRCDIR "/tests/files/gpg_tests/gpged_password", &data));
+    AUTHINFO(authinfo_simple_query(data, NULL, NULL, NULL, &entry, &error));
     AUTHINFO(authinfo_password_extract(entry.password, &password));
 
     ck_assert_str_eq(entry.host, "host");
@@ -137,26 +145,26 @@ TEST(gpged_password)
     ck_assert_str_eq(password, "password");
 
     authinfo_parse_entry_free(&entry);
+    authinfo_data_free(data);
 }
 END_TEST
 
 TEST(gpged_password_bad)
 {
-    char buffer[1024] = {0};
-    size_t buffer_size = sizeof(buffer);
+    struct authinfo_dat_t *data;
 
     struct authinfo_parse_entry_t entry;
     struct authinfo_parse_error_t error;
     const char *password;
 
-    AUTHINFO(authinfo_read_file(TOP_SRCDIR "/tests/files/gpg_tests/gpged_password_bad",
-                                buffer, &buffer_size));
-    AUTHINFO(authinfo_simple_query(buffer, buffer_size, NULL, NULL, NULL,
-                                   &entry, &error));
+    AUTHINFO(authinfo_data_from_file(
+                 TOP_SRCDIR "/tests/files/gpg_tests/gpged_password_bad", &data));
+    AUTHINFO(authinfo_simple_query(data, NULL, NULL, NULL, &entry, &error));
     ck_assert_int_eq(authinfo_password_extract(entry.password, &password),
                      AUTHINFO_EGPGME_BAD_BASE64);
 
     authinfo_parse_entry_free(&entry);
+    authinfo_data_free(data);
 }
 END_TEST
 

@@ -95,13 +95,20 @@ parse_all_error_cb(const struct authinfo_parse_error_t *error, void *arg)
 }
 
 static void
-parse_all(const char *data)
+parse_all(const char *raw_data)
 {
+    enum authinfo_result_t ret;
+    struct authinfo_data_t *data;
+
     entries_start = entries_count;
     errors_start = errors_count;
 
-    authinfo_parse(data, strlen(data),
-                   NULL, parse_all_entry_cb, parse_all_error_cb);
+    ret = authinfo_data_from_mem(raw_data, strlen(raw_data), &data);
+    assert(ret == AUTHINFO_OK);
+
+    authinfo_parse(data, NULL, parse_all_entry_cb, parse_all_error_cb);
+
+    authinfo_data_free(data);
 }
 
 static bool
@@ -123,13 +130,20 @@ parse_one_error_cb(const struct authinfo_parse_error_t *error, void *arg)
 }
 
 static void
-parse_one(const char *data)
+parse_one(const char *raw_data)
 {
+    enum authinfo_result_t ret;
+    struct authinfo_data_t *data;
+
     entries_start = entries_count;
     errors_start = errors_count;
 
-    authinfo_parse(data, strlen(data),
-                   NULL, parse_one_entry_cb, parse_one_error_cb);
+    ret = authinfo_data_from_mem(raw_data, strlen(raw_data), &data);
+    assert(ret == AUTHINFO_OK);
+
+    authinfo_parse(data, NULL, parse_one_entry_cb, parse_one_error_cb);
+
+    authinfo_data_free(data);
 }
 
 
