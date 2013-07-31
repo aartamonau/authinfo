@@ -33,6 +33,7 @@
 struct authinfo_data_t {
     enum { STATIC, ALLOCATED } type;
     enum { USER, MALLOC, GPGME } buffer_type;
+    bool sensitive;
 
     const char *buffer;
     size_t size;
@@ -167,6 +168,8 @@ static enum authinfo_result_t
 authinfo_data_copy(const struct authinfo_data_t *data,
                    struct authinfo_data_t **copy);
 
+static void
+authinfo_wipe(char *buffer, size_t size);
 /* internal functions prototypes end */
 
 enum authinfo_result_t
@@ -242,6 +245,7 @@ authinfo_data_from_mem(const char *buffer, size_t size,
     (*data)->buffer_type = USER;
     (*data)->buffer = buffer;
     (*data)->size = size;
+    (*data)->sensitive = false;
 
     return AUTHINFO_OK;
 }
@@ -257,6 +261,11 @@ authinfo_data_get_mem(const struct authinfo_data_t *data,
 void
 authinfo_data_free(struct authinfo_data_t *data)
 {
+    if (data->sensitive) {
+        assert(data->buffer_type != USER);
+        authinfo_wipe((char *) data->buffer, data->size);
+    }
+
     switch (data->buffer_type) {
     case USER:
         break;
@@ -354,6 +363,7 @@ authinfo_parse(const struct authinfo_data_t *data,
     char password_buffer[TOKEN_SIZE_MAX];
     struct authinfo_data_t password_data = { .type = STATIC,
                                              .buffer_type = USER,
+                                             .sensitive = false,
                                              .buffer = password_buffer,
                                              .size = TOKEN_SIZE_MAX };
     struct authinfo_password_t password;
@@ -766,6 +776,7 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
 
     (*plain_text)->type = ALLOCATED;
     (*plain_text)->buffer_type = GPGME;
+    (*plain_text)->sensitive = true;
     (*plain_text)->buffer = gpgme_data_release_and_get_mem(plain,
                                                            &(*plain_text)->size);
 
@@ -970,6 +981,7 @@ authinfo_do_read_file(const char *path, struct authinfo_data_t **data)
 
     (*data)->type = ALLOCATED;
     (*data)->buffer_type = MALLOC;
+    (*data)->sensitive = false;
     (*data)->buffer = buffer;
     (*data)->size = 0;
 
@@ -1403,6 +1415,7 @@ authinfo_b64decode(const struct authinfo_data_t *b64data,
 
     (*data)->type = ALLOCATED;
     (*data)->buffer_type = MALLOC;
+    (*data)->sensitive = false;
 
     ret = base64_decode((uint8_t *) (*data)->buffer,
                         b64data->buffer + strlen(GPG_PREFIX), b64data->size);
@@ -1439,6 +1452,7 @@ authinfo_null_terminate(const struct authinfo_data_t *input,
 
     (*output)->type = ALLOCATED;
     (*output)->buffer_type = MALLOC;
+    (*output)->sensitive = input->sensitive;
     (*output)->buffer = buffer;
     (*output)->size = size;
 
@@ -1467,7 +1481,18 @@ authinfo_data_copy(const struct authinfo_data_t *data,
     (*copy)->type = ALLOCATED;
     (*copy)->buffer = buffer;
     (*copy)->buffer_type = MALLOC;
+    (*copy)->sensitive = data->sensitive;
     (*copy)->size = data->size;
 
     return AUTHINFO_OK;
+}
+
+static void
+authinfo_wipe(char *buffer, size_t size)
+{
+    volatile char *p = buffer;
+
+    while (size--) {
+        *p++ = 0;
+    }
 }
