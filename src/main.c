@@ -148,7 +148,7 @@ emit_env_var(const char *var, const char *value)
 }
 
 static void
-query_process_entry(const struct authinfo_parse_entry_t *entry)
+query_process_entry(struct authinfo_parse_entry_t *entry)
 {
     const char *password = NULL;
 
@@ -166,6 +166,8 @@ query_process_entry(const struct authinfo_parse_entry_t *entry)
     emit_env_var("AUTHINFO_PROTOCOL", entry->protocol);
     emit_env_var("AUTHINFO_PASSWORD", password);
     emit_env_var("AUTHINFO_DEFAULT", (entry->host == NULL) ? "yes" : "no");
+
+    authinfo_parse_entry_free(entry);
 }
 
 static void
