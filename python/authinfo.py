@@ -42,13 +42,17 @@ authinfo_find_file = libauthinfo.authinfo_find_file
 authinfo_find_file.restype = c_int
 authinfo_find_file.argtypes = [POINTER(c_char_p)]
 
-authinfo_read_file = libauthinfo.authinfo_read_file
-authinfo_read_file.restype = c_int
-authinfo_read_file.argtypes = [c_char_p, c_char_p, POINTER(c_size_t)]
+authinfo_data_from_file = libauthinfo.authinfo_data_from_file
+authinfo_data_from_file.restype = c_int
+authinfo_data_from_file.argtypes = [c_char_p, POINTER(c_void_p)]
+
+authinfo_data_free = libauthinfo.authinfo_data_free
+authinfo_data_free.restype = None
+authinfo_data_free.argtypes = [c_void_p]
 
 authinfo_simple_query = libauthinfo.authinfo_simple_query
 authinfo_simple_query.restype = c_int
-authinfo_simple_query.argtypes = [c_char_p, c_size_t,
+authinfo_simple_query.argtypes = [c_void_p,
                                   c_char_p, c_char_p, c_char_p,
                                   POINTER(authinfo_parse_entry_t),
                                   POINTER(authinfo_parse_error_t)]
@@ -84,9 +88,6 @@ class AuthinfoError(Exception):
     `AuthinfoError.AUTHINFO_ENOMEM`
        Memory could not be allocated
 
-    `AuthinfoError.AUTHINFO_ETOOBIG`
-       Authinfo file content didn't fit into internal read buffer
-
     `AuthinfoError.AUTHINFO_EUNKNOWN`
        Unknown error occurred
 
@@ -118,15 +119,14 @@ class AuthinfoError(Exception):
     AUTHINFO_EACCESS               = 1
     AUTHINFO_ENOENT                = 2
     AUTHINFO_ENOMEM                = 3
-    AUTHINFO_ETOOBIG               = 4
-    AUTHINFO_EUNKNOWN              = 5
-    AUTHINFO_EGPGME                = 6
-    AUTHINFO_EGPGME_DECRYPT_FAILED = 7
-    AUTHINFO_EGPGME_BAD_PASSPHRASE = 8
-    AUTHINFO_EGPGME_BAD_BASE64     = 9
-    AUTHINFO_ENOGPGME              = 10
-    AUTHINFO_ENOMATCH              = 11
-    AUTHINFO_EPARSE                = 12
+    AUTHINFO_EUNKNOWN              = 4
+    AUTHINFO_EGPGME                = 5
+    AUTHINFO_EGPGME_DECRYPT_FAILED = 6
+    AUTHINFO_EGPGME_BAD_PASSPHRASE = 7
+    AUTHINFO_EGPGME_BAD_BASE64     = 8
+    AUTHINFO_ENOGPGME              = 9
+    AUTHINFO_ENOMATCH              = 10
+    AUTHINFO_EPARSE                = 11
 
     def __init__(self, type):
         super(AuthinfoError, self).__init__()
@@ -282,23 +282,32 @@ def _handle_authinfo_result(ret):
     raise AuthinfoError(ret)
 
 
-class AuthinfoPath(object):
+class AuthinfoData(object):
+    __slots__ = ['_data']
+
     def __init__(self, path):
-        self._allocated = path is None
-        self._c_path = None
+        self._data = None
 
         if path is None:
-            self._c_path = c_char_p()
-            _handle_authinfo_result(authinfo_find_file(byref(self._c_path)))
+            c_path = c_char_p()
+            _handle_authinfo_result(authinfo_find_file(byref(c_path)))
         else:
-            self._c_path = c_char_p(path)
+            c_path = c_char_p(path)
+
+        try:
+            data = c_void_p()
+            _handle_authinfo_result(authinfo_data_from_file(c_path, byref(data)))
+            self._data = data
+        finally:
+            if path is None:
+                free(c_path)
 
     def __del__(self):
-        if self._allocated and self._c_path is not None:
-            free(self._c_path)
+        if self._data is not None:
+            authinfo_data_free(self._data)
 
-    def value(self):
-        return self._c_path.value
+    def get_data(self):
+        return self._data
 
 
 def query(host=None, user=None, protocol=None, path=None):
@@ -308,13 +317,7 @@ def query(host=None, user=None, protocol=None, path=None):
     used.
     '''
 
-    c_path = AuthinfoPath(path)
-
-    data = create_string_buffer(1 << 16)
-    data_size = c_size_t(len(data))
-
-    _handle_authinfo_result(
-        authinfo_read_file(c_path.value(), data, byref(data_size)))
+    data = AuthinfoData(path)
 
     c_host = host and c_char_p(host)
     c_user = user and c_char_p(user)
@@ -322,7 +325,7 @@ def query(host=None, user=None, protocol=None, path=None):
     c_entry = authinfo_parse_entry_t()
     c_error = authinfo_parse_error_t()
 
-    ret = authinfo_simple_query(data, data_size,
+    ret = authinfo_simple_query(data.get_data(),
                                 c_host, c_protocol, c_user,
                                 byref(c_entry), byref(c_error))
     if ret == AuthinfoError.AUTHINFO_OK:
