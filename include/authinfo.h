@@ -33,7 +33,6 @@ enum authinfo_result_t {
     AUTHINFO_EACCESS,           /**< Couldn't access some path. */
     AUTHINFO_ENOENT,            /**< Path does not exist.  */
     AUTHINFO_ENOMEM,            /**< Not enough memory. */
-    AUTHINFO_ETOOBIG,           /**< Authinfo file is too big. */
     AUTHINFO_EUNKNOWN,          /**< Some unexpected condition happened. */
     AUTHINFO_EGPGME,            /**< Generic GPGME error. */
     AUTHINFO_EGPGME_DECRYPT_FAILED, /**< Decryption failed. */
@@ -107,7 +106,6 @@ authinfo_data_from_mem(const char *buffer, size_t size,
  *
  * @retval AUTHINFO_OK
  * @retval AUTHINFO_ENOGPGME
- * @retval AUTHINFO_ETOOBIG
  * @retval AUTHINFO_ENOENT
  * @retval AUTHINFO_EACCESS
  * @retval AUTHINFO_EUNKNOWN

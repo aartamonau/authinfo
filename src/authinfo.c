@@ -187,7 +187,6 @@ static const char *authinfo_result2str[] = {
     [AUTHINFO_EACCESS] = "Permission denied",
     [AUTHINFO_ENOENT] = "File or directory not found",
     [AUTHINFO_ENOMEM] = "Could not allocate memory",
-    [AUTHINFO_ETOOBIG] = "Authinfo file is too big",
     [AUTHINFO_EUNKNOWN] = "Unknown error happened",
     [AUTHINFO_EGPGME] = "Unknown GPGME error",
     [AUTHINFO_EGPGME_DECRYPT_FAILED] = "Decryption failed",
