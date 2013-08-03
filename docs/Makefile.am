@@ -1,3 +1,5 @@
+dist_doc_DATA = $(top_srcdir)/docs/offlineimap.py
+
 if HAVE_DOXYGEN
 htmldocdir = $(docdir)/html
 
