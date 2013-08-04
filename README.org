@@ -124,3 +124,42 @@
    #+BEGIN_SRC sh
    authinfo --validate --path <path to password file>
    #+END_SRC
+
+** CLI tool
+
+   #+BEGIN_EXAMPLE
+   $ authinfo --help
+   Usage: authinfo [COMMAND] [OPTIONS]
+
+   Supported commands:
+      --query      query authinfo file for matching entries
+           --user             match user name
+           --host             match host name
+           --protocol         match protocol
+           --path             use this authinfo file instead of autodiscovered
+      --validate   check authinfo file for syntax errors
+           --path             use this authinfo file instead of autodiscovered
+      --version    print version info
+      --help       print this help
+   #+END_EXAMPLE
+
+
+   The CLI tool can work in syntax checking and querying mode.
+
+*** Syntax checking
+
+   In syntax checking mode only the syntax of password file is checked and in
+   case there exist any errors they are reported:
+
+   #+BEGIN_EXAMPLE
+   $ echo "hostt hostname password password" > /tmp/authinfo
+   $ authinfo --path /tmp/authinfo --validate
+   Parsing /tmp/authinfo.
+     1:0: Unknown keyword used
+     1:5: Unknown keyword used
+     1:0: Host not specified
+   $ echo "host hostname password password" > /tmp/authinfo
+   $ authinfo --path /tmp/authinfo --validate
+   Parsing /tmp/authinfo.
+     No errors found
+   #+END_EXAMPLE
