@@ -1,0 +1,15 @@
+#+AUTHOR: Aliaksey Artamonau
+#+EMAIL: aliaksiej.artamonau@gmail.com
+
+* What authinfo is?
+
+  Authinfo is supposed to be a "keep it simple stupid" and "don't reinvent the
+  wheel" password manager. It's simple in that the passwords are stored in a
+  human readable text file. Actually, it doesn't even support updating that
+  file. It doesn't reinvent the wheel because it reuses the file format that
+  has been there for decades, namely [[http://linux.about.com/library/cmd/blcmdl5_netrc.htm][netrc]] with extensions introduced by
+  [[http://www.gnus.org/][Gnus]]. Similarly to Gnus, authinfo can read files that are encrypted with
+  [[http://www.gnupg.org/][GnuPG]]. Since authinfo cannot update password file on its own, it's should be
+  used in conjunction with your favorite text editor. It's especially
+  convenient if your editor can also seamlessly decrypt GnuPG files (like
+  [[https://www.gnu.org/software/emacs/][Emacs]] does).
