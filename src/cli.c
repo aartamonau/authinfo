@@ -111,7 +111,7 @@ static void
 emit_env_var(const char *var, const char *value)
 {
     if (value == NULL) {
-        return;
+        value = "";
     }
 
     size_t len = strlen(value);
