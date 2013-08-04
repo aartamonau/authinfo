@@ -75,15 +75,15 @@ fi
 
 AM_CONDITIONAL([HAVE_GPGME], [test x$have_gpgme = xyes])
 
-AC_ARG_ENABLE([authinfo-tool],
-  [AS_HELP_STRING([--enable-authinfo-tool],
-          [build standalone authinfo tool @<:@default=yes@:>@])],
-   [enable_authinfo_tool="$enableval"],
-   [enable_authinfo_tool="yes"])
+AC_ARG_ENABLE([cli],
+  [AS_HELP_STRING([--enable-cli],
+          [build cli tool @<:@default=yes@:>@])],
+   [enable_cli="$enableval"],
+   [enable_cli="yes"])
 
-AM_CONDITIONAL([BUILD_AUTHINFO_TOOL], [test x$enable_authinfo_tool = xyes])
+AM_CONDITIONAL([BUILD_CLI], [test x$enable_cli = xyes])
 
-if test x$enable_authinfo_tool = xyes; then
+if test x$enable_cli = xyes; then
   AC_CHECK_FUNCS([getopt_long])
 fi
 
