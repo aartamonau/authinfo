@@ -20,8 +20,8 @@
    Authinfo follows usual GNU Autotools build procedure:
 
    #+BEGIN_SRC sh
-./configure
-make all install
+   ./configure
+   make all install
    #+END_SRC
 
    Optional features:
