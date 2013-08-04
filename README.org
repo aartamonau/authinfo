@@ -1,7 +1,7 @@
 #+AUTHOR: Aliaksey Artamonau
 #+EMAIL: aliaksiej.artamonau@gmail.com
 
-* What authinfo is?
+* What is authinfo?
 
   Authinfo is supposed to be a "keep it simple stupid" and "don't reinvent the
   wheel" password manager. It's simple in that the passwords are stored in a
