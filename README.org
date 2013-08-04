@@ -45,14 +45,14 @@ make all install
    By default authinfo will look for password file in the following locations
    (in order):
 
-     - $HOME/.authinfo.gpg (if GPG support is enabled)
-     - $HOME/.authinfo
-     - $HOME/.netrc.gpg (if GPG support is enabled)
-     - $HOME/.netrc
-     - \/etc\/authinfo.gpg (if GPG support is enabled)
-     - \/etc\/authinfo
-     - \/etc\/netrc.gpg (if GPG support is enabled)
-     - \/etc\/netrc
+     - =$HOME/.authinfo.gpg= (if GPG support is enabled)
+     - =$HOME/.authinfo=
+     - =$HOME/.netrc.gpg= (if GPG support is enabled)
+     - =$HOME/.netrc=
+     - =/etc/authinfo.gpg= (if GPG support is enabled)
+     - =/etc/authinfo=
+     - =/etc/netrc.gpg= (if GPG support is enabled)
+     - =/etc/netrc=
 
    When password file has .gpg extension, it is assumed to be GPG encrypted
    and authinfo will try to decrypt it.
