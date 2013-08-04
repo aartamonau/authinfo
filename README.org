@@ -13,3 +13,28 @@
   used in conjunction with your favorite text editor. It's especially
   convenient if your editor can also seamlessly decrypt GnuPG files (like
   [[https://www.gnu.org/software/emacs/][Emacs]] does).
+
+* Getting authinfo
+** Building from source
+
+   Authinfo follows usual GNU Autotools build procedure:
+
+   #+BEGIN_SRC sh
+./configure
+make all install
+   #+END_SRC
+
+   Optional features:
+     - GPG support (default is on)
+
+       To disable pass --disable-gpg flag to configure script. When enabled,
+       [[http://www.gnupg.org/related_software/gpgme/][GPGME]] must be installed in the system.
+
+     - Python2 bindings (default is on)
+
+       To disable pass --disable-python flag to configure script. Minimal
+       supported python version is 2.5. Python3 is not supported.
+
+     - CLI tool (default is on)
+
+       To disable pass --disable-cli flag to configure script.
