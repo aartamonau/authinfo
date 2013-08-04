@@ -36,7 +36,7 @@ AUTHINFO = authinfo
 endif
 
 bin_PROGRAMS = $(AUTHINFO)
-authinfo_SOURCES = src/main.c
+authinfo_SOURCES = src/cli.c
 authinfo_LDADD = libauthinfo_impl.la
 
 pkgconfigdir = $(libdir)/pkgconfig
