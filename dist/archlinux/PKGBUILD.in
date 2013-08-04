@@ -7,7 +7,7 @@ pkgrel=1
 pkgdesc="Library for parsing authinfo files"
 url="https://github.com/aartamonau/authinfo"
 arch=('i686' 'x86_64')
-license=('GPL3')
+license=('LGPL3')
 depends=('gpgme' 'python2')
 makedepends=('git')
 
