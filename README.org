@@ -63,7 +63,7 @@
    password file consists of one or more lines of the following format:
 
    #+BEGIN_EXAMPLE
-   host <host> [user <user>] [password <password>] [port <port>] [force true|false]
+   host <host> [user <user>] [password <password>] [port <port>] [force true|yes]
    #+END_EXAMPLE
 
    Some keywords has synonyms:
