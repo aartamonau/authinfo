@@ -56,3 +56,71 @@
 
    When password file has .gpg extension, it is assumed to be GPG encrypted
    and authinfo will try to decrypt it.
+
+** Password file format
+
+   Authinfo uses extended netrc file format introduced by Gnus. In short,
+   password file consists of one or more lines of the following format:
+
+   #+BEGIN_EXAMPLE
+   host <host> [user <user>] [password <password>] [port <port>] [force true|false]
+   #+END_EXAMPLE
+
+   Some keywords has synonyms:
+
+    - =machine= is synonymous to =host=
+    - =login= and =account= are synonymous to =user=
+    - =protocol= is synonymous to =port=
+
+   The meaning of the most keywords should be obvious. Keyword =force= has no
+   practical use, it's supported just for compliance with Gnus.
+
+   Additionally, =host <host>= key-value pair can be substituted by a single
+   keyword =default=. The latter matches any host, so it should (but not
+   required) be the last one in the file.
+
+   Each non-empty line must contain either =host= pair or =default=
+   keyword. All the other pairs are optional.
+
+   Password can be specified in two formats: plain text and
+   GPG-encrypted. Plain text passwords can be optionally put in double
+   quotes. This allows to use password having white-space characters. Double
+   quote can be escaped inside double-quoted password by prepending it by
+   backslash. Similarly, backslash can be escaped by another
+   backslash. GPG-encrypted passwords are of the form =gpg:<base64
+   GPG-encrypted password>=.
+
+   There's also =macdef= construct that is supported only for compliance with
+   original netrc file format. It's a multi-line construct that starts with a
+   line of the form =macdef <name>= and ends with an empty line. See also
+   example below.
+
+   Lines that start with # character are considered comments.
+
+   Password files are processed line by line in order. This means that more
+   specific entries should be put first, more general ones should be put in
+   the end of the file.
+
+   Example of password file:
+
+   #+BEGIN_EXAMPLE
+   # macro definition (silently ignored)
+   macdef test
+   test
+
+   # password is 'pass"\ word'
+   host hostname user username password "pass\"\\ word" protocol protocol
+
+   # GPG-encrypted password
+   host hostname user username password gpg:hQEMA2iK9nrzfXUQAQf+NNAyrTm6HH9T267LOdDIpxGgkG2yvd+2C179zHrTmxLqGs0oVH1Fi2kQIlnACATF/JxoCN9+dKJ1qOmNRx0l9bSkoLBqGPOI8yDu0jyYMZw35Bz7+12uMaDFtapluYq6YZrNcLIpHkSB/dq5is127+abUY68C1+lvGgO9ry+r74e5AcHl8xBOFly3rj/hTuRTDwPemog6kZ2gs9Swjffiqt5kJm/fgctKRhntPqWYQz3jfcc1oQQN9SRuy6y3cy4jaqB7VyQNi38630vqHiuf0Ha+kFe9xYonkWtAxpJyPPzQMegjd0IsCjvZyKezyQeX9EcMSEd1b9U/Ot0KS+1+9JDAd0Z87Cp7q+rYThR5OThbIu3iW9L4ofIqMolHqwsXux2BbiRafzjzF/RVzoy+KkBv0P5GBX0lPXR0ytWlwsTWRSLkQ==
+
+   # default password
+   default password default-password
+   #+END_EXAMPLE
+
+   Password file can be checked for syntactical correctness by authinfo CLI
+   utility as follows:
+
+   #+BEGIN_SRC sh
+   authinfo --validate --path <path to password file>
+   #+END_SRC
