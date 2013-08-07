@@ -165,7 +165,6 @@ query_process_entry(struct authinfo_parse_entry_t *entry)
     emit_env_var("AUTHINFO_USER", entry->user);
     emit_env_var("AUTHINFO_PROTOCOL", entry->protocol);
     emit_env_var("AUTHINFO_PASSWORD", password);
-    emit_env_var("AUTHINFO_DEFAULT", (entry->host == NULL) ? "yes" : "no");
 
     authinfo_parse_entry_free(entry);
 }

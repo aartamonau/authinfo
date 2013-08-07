@@ -153,9 +153,6 @@ class AuthinfoParseError(Exception):
     `AuthinfoParseError.AUTHINFO_PET_NO_ERROR`
        No error
 
-    `AuthinfoParseError.AUTHINFO_PET_MISSING_HOST`
-       Host name was not specified
-
     `AuthinfoParseError.AUTHINFO_PET_MISSING_VALUE`
        Value was not specified for an attribute
 
@@ -183,28 +180,25 @@ class AuthinfoParseError(Exception):
     AUTHINFO_PET_NO_ERROR = 0
     '''No error'''
 
-    AUTHINFO_PET_MISSING_HOST = 1
-    '''Host name was not specified'''
-
-    AUTHINFO_PET_MISSING_VALUE = 2
+    AUTHINFO_PET_MISSING_VALUE = 1
     '''Value was not specified for an attribute'''
 
-    AUTHINFO_PET_VALUE_TOO_LONG = 3
+    AUTHINFO_PET_VALUE_TOO_LONG = 2
     '''Token exceeds maximum supported size'''
 
-    AUTHINFO_PET_BAD_VALUE = 4
+    AUTHINFO_PET_BAD_VALUE = 3
     '''Invalid value provided for an attribute'''
 
-    AUTHINFO_PET_BAD_KEYWORD = 5
+    AUTHINFO_PET_BAD_KEYWORD = 4
     '''Unrecognized keyword used'''
 
-    AUTHINFO_PET_DUPLICATED_KEYWORD = 6
+    AUTHINFO_PET_DUPLICATED_KEYWORD = 5
     '''Duplicate or synonymous attribute'''
 
-    AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN = 7
+    AUTHINFO_PET_UNTERMINATED_QUOTED_TOKEN = 6
     '''No matching closing double quote'''
 
-    AUTHINFO_PET_UNSUPPORTED_ESCAPE = 8
+    AUTHINFO_PET_UNSUPPORTED_ESCAPE = 7
     '''Unsupported escape sequence used'''
 
     def __init__(self, c_error):

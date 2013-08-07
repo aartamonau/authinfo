@@ -459,7 +459,7 @@ authinfo_parse(const struct authinfo_data_t *data,
                 TRACE("Read token \"%s\"\n", token);
 
                 if (strcmp(token, "default") == 0) {
-                    /* empty will indicate the default match entry */
+                    /* this is needed only to be able to report duplicates */
                     host[0] = '\0';
                     report_duplicate = (entry.host != NULL);
                     entry.host = host;
@@ -582,7 +582,6 @@ authinfo_parse(const struct authinfo_data_t *data,
 
 
 static const char *authinfo_parse_error_type2str[] = {
-    [AUTHINFO_PET_MISSING_HOST] = "Host not specified",
     [AUTHINFO_PET_MISSING_VALUE] = "Expected a value",
     [AUTHINFO_PET_VALUE_TOO_LONG] = "Value is too long",
     [AUTHINFO_PET_BAD_VALUE] = "Invalid value",
@@ -1134,15 +1133,9 @@ authinfo_report_entry(authinfo_parse_entry_cb_t entry_callback,
     bool stop;
     struct authinfo_parse_entry_t e = *entry;
 
-    if (!e.host) {
-        /* missing host is an error */
-        return authinfo_report_error(error_callback, arg,
-                                     AUTHINFO_PET_MISSING_HOST, line, 0);
-    }
-
     /* if host is empty it means that this's a "default" entry; we report
      * this by setting host to NULL */
-    if (strcmp(e.host, "") == 0) {
+    if (e.host && strcmp(e.host, "") == 0) {
         e.host = NULL;
     }
 

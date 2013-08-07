@@ -344,6 +344,10 @@ TEST(basic)
               "password password protocol protocol force yes");
     ASSERT_SINGLE_ENTRY("hostname", "username", "password", "protocol", true);
 
+    parse_all("user username "
+              "password password protocol protocol force yes");
+    ASSERT_SINGLE_ENTRY(NULL, "username", "password", "protocol", true);
+
     parse_all("default user username "
               "password password protocol protocol force yes");
     ASSERT_SINGLE_ENTRY(NULL, "username", "password", "protocol", true);
@@ -416,6 +420,9 @@ TEST(multi_entry)
 
         "#comment\n"
 
+        "user username "
+        "password password protocol protocol force yes\n"
+
         "default user username "
         "password password protocol protocol force yes\n"
 
@@ -462,36 +469,33 @@ TEST(multi_entry)
         "macdef cool\n"
         "really cool");
 
-    ASSERT_PARSES_COUNT(18);
+    ASSERT_PARSES_COUNT(19);
     ASSERT_ERRORS_COUNT(0);
 
     ASSERT_NTH_ENTRY(0, "hostname", "username", "password", "protocol", true);
     ASSERT_NTH_ENTRY(1, "hostname", "username", "password", "protocol", true);
     ASSERT_NTH_ENTRY(2, "hostname", "username", "password", "protocol", true);
     ASSERT_NTH_ENTRY(3, NULL, "username", "password", "protocol", true);
-    ASSERT_NTH_ENTRY(4, "hostname", "username", "password", "protocol", false);
-    ASSERT_NTH_ENTRY(5, "hostname", "username", "password", NULL, true);
-    ASSERT_NTH_ENTRY(6, "hostname", "username", NULL, "protocol", true);
-    ASSERT_NTH_ENTRY(7, "hostname", NULL, "password", "protocol", true);
-    ASSERT_NTH_ENTRY(8, "hostname", "username", "password", NULL, false);
-    ASSERT_NTH_ENTRY(9, "hostname", "username", NULL, NULL, false);
-    ASSERT_NTH_ENTRY(10, "hostname", NULL, NULL, NULL, false);
-    ASSERT_NTH_ENTRY(11, "hostname", "username", "password", NULL, false);
-    ASSERT_NTH_ENTRY(12, "hostname", "username", "pass word", NULL, false);
-    ASSERT_NTH_ENTRY(13, "hostname", "username", "pass \"word", NULL, false);
-    ASSERT_NTH_ENTRY(14, "hostname", "username", "pass \"\\word", NULL, false);
-    ASSERT_NTH_ENTRY(15, "hostname", "username", "pass \"\\", NULL, false);
-    ASSERT_NTH_ENTRY(16, "hostname", "username", " \"\\", NULL, false);
-    ASSERT_NTH_ENTRY(17, "hostname", "username", "\"\\", NULL, false);
+    ASSERT_NTH_ENTRY(4, NULL, "username", "password", "protocol", true);
+    ASSERT_NTH_ENTRY(5, "hostname", "username", "password", "protocol", false);
+    ASSERT_NTH_ENTRY(6, "hostname", "username", "password", NULL, true);
+    ASSERT_NTH_ENTRY(7, "hostname", "username", NULL, "protocol", true);
+    ASSERT_NTH_ENTRY(8, "hostname", NULL, "password", "protocol", true);
+    ASSERT_NTH_ENTRY(9, "hostname", "username", "password", NULL, false);
+    ASSERT_NTH_ENTRY(10, "hostname", "username", NULL, NULL, false);
+    ASSERT_NTH_ENTRY(11, "hostname", NULL, NULL, NULL, false);
+    ASSERT_NTH_ENTRY(12, "hostname", "username", "password", NULL, false);
+    ASSERT_NTH_ENTRY(13, "hostname", "username", "pass word", NULL, false);
+    ASSERT_NTH_ENTRY(14, "hostname", "username", "pass \"word", NULL, false);
+    ASSERT_NTH_ENTRY(15, "hostname", "username", "pass \"\\word", NULL, false);
+    ASSERT_NTH_ENTRY(16, "hostname", "username", "pass \"\\", NULL, false);
+    ASSERT_NTH_ENTRY(17, "hostname", "username", " \"\\", NULL, false);
+    ASSERT_NTH_ENTRY(18, "hostname", "username", "\"\\", NULL, false);
 }
 END_TEST
 
 TEST(errors)
 {
-    parse_all("user username "
-              "password password protocol protocol force yes");
-    ASSERT_SINGLE_ERROR(AUTHINFO_PET_MISSING_HOST);
-
     parse_all("host hostname user username "
               "password password protocol");
     ASSERT_SINGLE_ERROR(AUTHINFO_PET_MISSING_VALUE);

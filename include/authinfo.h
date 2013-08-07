@@ -142,7 +142,8 @@ struct authinfo_password_t;
 
 /// Represents an entry in authinfo file.
 struct authinfo_parse_entry_t {
-    const char *host;           /**< Host. NULL for the "default" entry. */
+    const char *host;           /**< Host. NULL for the "default" entry of if
+                                 * omitted. */
     const char *protocol;       /**< Protocol. NULL if omitted. */
     const char *user;           /**< User. NULL if omitted. */
     struct authinfo_password_t *password; /**< Password. NULL if omitted. */
@@ -160,7 +161,6 @@ typedef bool
 enum authinfo_parse_error_type_t {
     AUTHINFO_PET_NO_ERROR,      /**< No error. This is never returned to the
                                  * user. */
-    AUTHINFO_PET_MISSING_HOST,  /**< Host name was not specified. */
     AUTHINFO_PET_MISSING_VALUE, /**< Expected a value but got nothing. */
     AUTHINFO_PET_VALUE_TOO_LONG, /**< Value is too long to be handled. */
     AUTHINFO_PET_BAD_VALUE,     /**< Invalid value. */
