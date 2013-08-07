@@ -1384,7 +1384,10 @@ authinfo_simple_query_error(const struct authinfo_parse_error_t *error,
                             struct authinfo_simple_query_data_t *data)
 {
     data->status = AUTHINFO_EPARSE;
-    *data->error = *error;
+
+    if (data->error != NULL) {
+        *data->error = *error;
+    }
     return true;
 }
 

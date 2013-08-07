@@ -252,7 +252,8 @@ authinfo_parse_entry_free(struct authinfo_parse_entry_t *entry);
  * @param[out] entry parsed entry returned here in case of success; after it's
  *             not needed anymore it should be freed by
  *             authinfo_parse_entry_free() function
- * @param[out] error parse error returned here if data could not be parsed
+ * @param[out] error parse error returned here if data could not be parsed; if
+ *                   NULL, then ignored
  *
  * @retval AUTHINFO_OK matching entry found
  * @retval AUTHINFO_ENOMATCH no matching entry found
