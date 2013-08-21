@@ -208,3 +208,35 @@
 
     Authinfo provides Python bindings for a subset of functionality. Refer to
     [[python/authinfo.py][the source]] for details. [[docs/offlineimap.py][This script]] can also be used as an example.
+
+** OfflineImap
+
+   Authinfo can be used for storing passwords for [[http://offlineimap.org/][OfflineImap]]. Just copy
+   [[docs/offlineimap.py]] to =~/.offlineimap.py=. And then use it from your
+   =.offlineimaprc=:
+
+   #+BEGIN_EXAMPLE
+   [general]
+   accounts = Gmail
+   maxsyncaccounts = 3
+   pythonfile = ~/.offlineimap.py
+
+   [Account Gmail]
+   localrepository = Local
+   remoterepository = Remote
+
+   [Repository Local]
+   type = Maildir
+   localfolders = ~/mail/aliaksiej.artamonau@gmail.com
+
+   [Repository Remote]
+   type = IMAP
+   remotehost = imap.gmail.com
+   remoteuser = aliaksiej.artamonau@gmail.com
+   remotepasseval = get_password("imap.gmail.com", "aliaksiej.artamonau@gmail.com")
+   ssl = yes
+   maxconnections = 1
+   realdelete = no
+   cert_fingerprint = b0ba392bba326e6feb1add4d04fa0fb86cd173fa
+   #+END_EXAMPLE
+
