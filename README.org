@@ -240,3 +240,8 @@
    cert_fingerprint = b0ba392bba326e6feb1add4d04fa0fb86cd173fa
    #+END_EXAMPLE
 
+
+** Pidgin
+
+   Authinfo can also be used to keep passwords for libpurple based IM clients
+   like [[http://pidgin.im/][Pidgin]]. Please refer to [[https://github.com/aartamonau/pidgin-authinfo][pidgin-authinfo]] page for details.
