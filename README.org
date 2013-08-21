@@ -75,12 +75,11 @@
    The meaning of the most keywords should be obvious. Keyword =force= has no
    practical use, it's supported just for compliance with Gnus.
 
-   Additionally, =host <host>= key-value pair can be substituted by a single
+   Additionally, =host <host>= key/value pair can be substituted by a single
    keyword =default=. The latter matches any host, so it should (but not
    required) be the last one in the file.
 
-   Each non-empty line must contain either =host= pair or =default=
-   keyword. All the other pairs are optional.
+   Any of the key/value pairs can be omitted.
 
    Password can be specified in two formats: plain text and
    GPG-encrypted. Plain text passwords can be optionally put in double
