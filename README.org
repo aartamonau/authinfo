@@ -197,3 +197,9 @@
    $ echo $?
    1
    #+END_EXAMPLE
+
+** Library
+*** C
+
+    authinfo can be used as a library. API is briefly documented using
+    Doxygen. As an example of using the API one can refer to [[src/cli.c][authinfo cli]].
