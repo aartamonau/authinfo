@@ -203,3 +203,8 @@
 
     authinfo can be used as a library. API is briefly documented using
     Doxygen. As an example of using the API one can refer to [[src/cli.c][authinfo cli]].
+
+*** Python
+
+    Authinfo provides Python bindings for a subset of functionality. Refer to
+    [[python/authinfo.py][the source]] for details. [[docs/offlineimap.py][This script]] can also be used as an example.
