@@ -178,13 +178,11 @@
    AUTHINFO_PROTOCOL=80
    AUTHINFO_USER=user
    AUTHINFO_PASSWORD=password
-   AUTHINFO_DEFAULT=no
    AUTHINFO_HOST=hostname
    $ eval $(authinfo --path /tmp/authinfo --query --host other-host --user user)
    AUTHINFO_PROTOCOL=
    AUTHINFO_USER=
    AUTHINFO_PASSWORD=default-password
-   AUTHINFO_DEFAULT=yes
    AUTHINFO_HOST=
    #+END_EXAMPLE
 
