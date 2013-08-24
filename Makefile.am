@@ -1,3 +1,4 @@
+# -*- mode: makefile-automake; -*-
 ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = docs
