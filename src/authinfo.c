@@ -150,11 +150,11 @@ authinfo_report_error(authinfo_parse_error_cb_t error_callback, void *arg,
 
 static bool
 authinfo_simple_query_entry(const struct authinfo_parse_entry_t *entry,
-                            struct authinfo_simple_query_data_t *data);
+                            void *arg);
 
 static bool
 authinfo_simple_query_error(const struct authinfo_parse_error_t *error,
-                            struct authinfo_simple_query_data_t *data);
+                            void *arg);
 
 static enum authinfo_result_t
 authinfo_b64decode(const struct authinfo_data_t *b64data,
@@ -663,8 +663,7 @@ authinfo_simple_query(const struct authinfo_data_t *data,
     };
 
     authinfo_parse(data, (void *) &arg,
-                   (authinfo_parse_entry_cb_t) authinfo_simple_query_entry,
-                   (authinfo_parse_error_cb_t) authinfo_simple_query_error);
+                   authinfo_simple_query_entry, authinfo_simple_query_error);
 
     return arg.status;
 }
@@ -1311,8 +1310,10 @@ str_matches(const char *user_str, const char *str)
 
 static bool
 authinfo_simple_query_entry(const struct authinfo_parse_entry_t *entry,
-                            struct authinfo_simple_query_data_t *data)
+                            void *arg)
 {
+    struct authinfo_simple_query_data_t *data = arg;
+
     if (str_matches(data->user, entry->user) &&
         str_matches(data->host, entry->host) &&
         str_matches(data->protocol, entry->protocol)) {
@@ -1381,8 +1382,10 @@ authinfo_simple_query_entry(const struct authinfo_parse_entry_t *entry,
 
 static bool
 authinfo_simple_query_error(const struct authinfo_parse_error_t *error,
-                            struct authinfo_simple_query_data_t *data)
+                            void *arg)
 {
+    struct authinfo_simple_query_data_t *data = arg;
+
     data->status = AUTHINFO_EPARSE;
 
     if (data->error != NULL) {
