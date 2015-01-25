@@ -28,7 +28,7 @@ free.argtypes = [c_void_p]
 
 authinfo_init = libauthinfo.authinfo_init
 authinfo_init.restype = c_int
-authinfo_init.argtypes = []
+authinfo_init.argtypes = [c_char_p]
 
 authinfo_strerror = libauthinfo.authinfo_strerror
 authinfo_strerror.restype = c_char_p
@@ -265,10 +265,6 @@ class AuthinfoEntry(object):
         return self.host is None
 
 
-def _init():
-    _handle_authinfo_result(authinfo_init())
-
-
 def _handle_authinfo_result(ret):
     if ret == AuthinfoError.AUTHINFO_OK:
         return
@@ -304,6 +300,23 @@ class AuthinfoData(object):
         return self._data
 
 
+def init(name=None):
+    '''
+    Initialize libauthinfo. `name` is a program name shown in a pinentry
+    prompt. If None, sys.argv[0] is used.
+
+    When you import authinfo for the first time, init(None) is called
+    implicitly.
+    '''
+
+    if name is None:
+        import sys
+        name = sys.argv[0]
+
+    c_name = c_char_p(name)
+    _handle_authinfo_result(authinfo_init(c_name))
+
+
 def query(host=None, user=None, protocol=None, path=None):
     '''
     Find an entry matching `host`, `user` and `protocol`. Any of these can be
@@ -337,4 +350,4 @@ def query(host=None, user=None, protocol=None, path=None):
         authinfo_parse_entry_free(byref(c_entry))
 
 
-_init()
+init()
