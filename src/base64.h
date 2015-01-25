@@ -1,3 +1,5 @@
+/* -*- mode: c; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*- */
+
 /*
  * Copyright (c) 2006 Ryan Martell. (rdm4@martellventures.com)
  *

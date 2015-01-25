@@ -1,3 +1,5 @@
+/* -*- mode: c; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*- */
+
 #ifndef _AUTHINFO_INTERNAL_H_
 #define _AUTHINFO_INTERNAL_H_
 

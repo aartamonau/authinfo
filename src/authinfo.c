@@ -1,4 +1,4 @@
-/* -*- mode: c; c-basic-offset: 4; tab-width: 4; ; indent-tabs-mode: nil; -*- */
+/* -*- mode: c; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*- */
 /**
  * @file   authinfo.c
  * @author Aliaksey Artamonau <aliaksiej.artamonau@gmail.com>
