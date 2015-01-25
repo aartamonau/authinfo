@@ -190,7 +190,7 @@ setup(void)
     errors_start = 0;
     errors_count = 0;
 
-    assert(authinfo_init() == AUTHINFO_OK);
+    assert(authinfo_init(NULL) == AUTHINFO_OK);
 }
 
 static void

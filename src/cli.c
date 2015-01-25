@@ -92,7 +92,7 @@ init_authinfo(void)
 {
     enum authinfo_result_t ret;
 
-    ret = authinfo_init();
+    ret = authinfo_init("authinfo");
     if (ret != AUTHINFO_OK) {
         authinfo_error(ret, "failed to initialize authinfo library");
     }

@@ -72,10 +72,14 @@ enum authinfo_result_t {
  * accordingly. So you might want to call setlocale to set it to the desired
  * value.
  *
+ * @param name Program name to show in the pinentry prompt.
+ *
  * @retval AUTHINFO_OK
+ * @retval AUTHINFO_ENOMEM
+ * @retval AUTHINFO_EUNKNOWN
  * @retval AUTHINFO_EGPGME
  */
-EXPORT_FUNCTION enum authinfo_result_t authinfo_init(void);
+EXPORT_FUNCTION enum authinfo_result_t authinfo_init(const char *name);
 
 /**
  * Return a human readable description for a status code.

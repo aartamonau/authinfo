@@ -83,6 +83,14 @@ struct authinfo_simple_query_data_t {
     struct authinfo_parse_error_t *error;
 };
 
+struct authinfo_ctx_t {
+    char *name;
+    char *lc_ctype;
+    char *lc_messages;
+};
+
+static struct authinfo_ctx_t ctx = {0};
+
 /* internal macros */
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
@@ -190,16 +198,49 @@ authinfo_data_copy(const struct authinfo_data_t *data,
 
 static void
 authinfo_wipe(char *buffer, size_t size);
+
+static void
+authinfo_ctx_free(void);
 /* internal functions prototypes end */
 
 enum authinfo_result_t
-authinfo_init(void)
+authinfo_init(const char *name)
 {
+    enum authinfo_result_t ret = AUTHINFO_OK;
+
+    authinfo_ctx_free();
+
 #ifdef HAVE_GPGME
-    return authinfo_gpgme_init();
-#else
-    return AUTHINFO_OK;
+    const char *lc_ctype = setlocale(LC_CTYPE, NULL);
+    const char *lc_messages = setlocale(LC_MESSAGES, NULL);
+
+    if (lc_ctype == NULL || lc_messages == NULL) {
+        TRACE("Failed to get locale\n");
+        return AUTHINFO_EUNKNOWN;
+    }
+
+    if (name != NULL) {
+        ctx.name = strdup(name);
+    } else {
+        ctx.name = "<unknown>";
+    }
+
+    ctx.lc_ctype = strdup(lc_ctype);
+    ctx.lc_messages = strdup(lc_messages);
+
+    if (ctx.name == NULL || ctx.lc_ctype == NULL || ctx.lc_messages == NULL) {
+        ret = AUTHINFO_ENOMEM;
+        goto authinfo_init_return;
+    }
+
+    ret = authinfo_gpgme_init();
 #endif  /* HAVE_GPGME */
+
+authinfo_init_return:
+    if (ret != AUTHINFO_OK) {
+        authinfo_ctx_free();
+    }
+    return ret;
 }
 
 static const char *authinfo_result2str[] = {
@@ -718,15 +759,18 @@ authinfo_gpgme_init(void)
 {
     gpgme_error_t ret;
 
+    assert(ctx.lc_ctype != NULL);
+    assert(ctx.lc_messages != NULL);
+
     gpgme_check_version(NULL);
 
-    ret = gpgme_set_locale(NULL, LC_CTYPE, setlocale(LC_CTYPE, NULL));
+    ret = gpgme_set_locale(NULL, LC_CTYPE, ctx.lc_ctype);
     if (ret != GPG_ERR_NO_ERROR) {
         TRACE_GPGME_ERROR("Couldn't set GPGME locale", ret);
         return authinfo_gpgme_error2result(ret);
     }
 
-    ret = gpgme_set_locale(NULL, LC_MESSAGES, setlocale(LC_MESSAGES, NULL));
+    ret = gpgme_set_locale(NULL, LC_MESSAGES, ctx.lc_messages);
     if (ret != GPG_ERR_NO_ERROR) {
         TRACE_GPGME_ERROR("Couldn't set GPGME locale", ret);
         return authinfo_gpgme_error2result(ret);
@@ -1509,5 +1553,24 @@ authinfo_wipe(char *buffer, size_t size)
 
     while (size--) {
         *p++ = 0;
+    }
+}
+
+static void
+authinfo_ctx_free(void)
+{
+    if (ctx.name != NULL) {
+        free(ctx.name);
+        ctx.name = NULL;
+    }
+
+    if (ctx.lc_ctype != NULL) {
+        free(ctx.lc_ctype);
+        ctx.lc_ctype = NULL;
+    }
+
+    if (ctx.lc_messages != NULL) {
+        free(ctx.lc_messages);
+        ctx.lc_messages = NULL;
     }
 }

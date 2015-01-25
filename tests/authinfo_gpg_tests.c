@@ -37,7 +37,7 @@
 static void
 setup(void)
 {
-    AUTHINFO(authinfo_init());
+    AUTHINFO(authinfo_init(NULL));
 
     gpgme_ctx_t ctx;
     gpgme_data_t data;
