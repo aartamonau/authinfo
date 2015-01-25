@@ -720,7 +720,7 @@ authinfo_gpgme_init(void)
 
     gpgme_check_version(NULL);
 
-    ret = gpgme_set_locale(NULL, LC_CTYPE, setlocale(LC_ALL, NULL));
+    ret = gpgme_set_locale(NULL, LC_CTYPE, setlocale(LC_CTYPE, NULL));
     if (ret != GPG_ERR_NO_ERROR) {
         TRACE_GPGME_ERROR("Couldn't set GPGME locale", ret);
         return authinfo_gpgme_error2result(ret);
