@@ -57,7 +57,6 @@ enum authinfo_result_t {
     AUTHINFO_EGPGME_DECRYPT_FAILED, /**< Decryption failed. */
     AUTHINFO_EGPGME_BAD_PASSPHRASE, /**< Invalid passphrase supplied. */
     AUTHINFO_EGPGME_BAD_BASE64, /**< Malformed base64-encoded password. */
-    AUTHINFO_ENOGPGME,          /**< Library compiled without GPG support */
     AUTHINFO_ENOMATCH,          /**< No matching entry was found. */
     AUTHINFO_EPARSE,            /**< Parse error. */
     AUTHINFO_RESULT_MAX
@@ -128,7 +127,6 @@ authinfo_data_from_mem(const char *buffer, size_t size,
  * @param[out] data resulting data object
  *
  * @retval AUTHINFO_OK
- * @retval AUTHINFO_ENOGPGME
  * @retval AUTHINFO_ENOENT
  * @retval AUTHINFO_EACCESS
  * @retval AUTHINFO_EUNKNOWN
@@ -243,7 +241,6 @@ EXPORT_FUNCTION void authinfo_parse(const struct authinfo_data_t *data,
  * @param[out] data extracted password is returned here
  *
  * @retval AUTHINFO_OK
- * @retval AUTHINFO_ENOGPGME
  * @retval AUTHINFO_EGPGME
  * @retval AUTHINFO_EGPGME_BAD_BASE64
  * @retval AUTHINFO_EGPGME_DECRYPT_FAILED

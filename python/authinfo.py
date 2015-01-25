@@ -103,9 +103,6 @@ class AuthinfoError(Exception):
     `AuthinfoError.AUTHINFO_EGPGME_BAD_BASE64`
        Malformed base64-encode password
 
-    `AuthinfoError.AUTHINFO_ENOGPGME`
-       Authinfo was built without GPG support
-
     `AuthinfoError.AUTHINFO_ENOMATCH`
        No matching entries found
 
@@ -124,9 +121,8 @@ class AuthinfoError(Exception):
     AUTHINFO_EGPGME_DECRYPT_FAILED = 6
     AUTHINFO_EGPGME_BAD_PASSPHRASE = 7
     AUTHINFO_EGPGME_BAD_BASE64     = 8
-    AUTHINFO_ENOGPGME              = 9
-    AUTHINFO_ENOMATCH              = 10
-    AUTHINFO_EPARSE                = 11
+    AUTHINFO_ENOMATCH              = 9
+    AUTHINFO_EPARSE                = 10
 
     def __init__(self, type):
         super(AuthinfoError, self).__init__()

@@ -36,11 +36,9 @@
 #include <fcntl.h>
 #include <assert.h>
 
-#ifdef HAVE_GPGME
 #include <locale.h>
 #include <gpgme.h>
 #include "base64.h"
-#endif
 
 #include "authinfo.h"
 #include "authinfo_internal.h"
@@ -108,7 +106,6 @@ static struct authinfo_ctx_t ctx = {0};
 /* internal macros end */
 
 /* internal functions prototypes */
-#ifdef HAVE_GPGME
 static enum authinfo_result_t authinfo_gpgme_init(void);
 
 static enum authinfo_result_t
@@ -117,7 +114,6 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
 
 static enum authinfo_result_t
 authinfo_gpgme_error2result(gpgme_error_t error);
-#endif  /* HAVE_GPGME */
 
 static bool authinfo_is_gpged_file(const char *path);
 
@@ -210,7 +206,6 @@ authinfo_init(const char *name)
 
     authinfo_ctx_free();
 
-#ifdef HAVE_GPGME
     const char *lc_ctype = setlocale(LC_CTYPE, NULL);
     const char *lc_messages = setlocale(LC_MESSAGES, NULL);
 
@@ -234,7 +229,6 @@ authinfo_init(const char *name)
     }
 
     ret = authinfo_gpgme_init();
-#endif  /* HAVE_GPGME */
 
 authinfo_init_return:
     if (ret != AUTHINFO_OK) {
@@ -253,7 +247,6 @@ static const char *authinfo_result2str[] = {
     [AUTHINFO_EGPGME_DECRYPT_FAILED] = "Decryption failed",
     [AUTHINFO_EGPGME_BAD_PASSPHRASE] = "Bad passphrase supplied",
     [AUTHINFO_EGPGME_BAD_BASE64] = "Malformed base64-encoded password",
-    [AUTHINFO_ENOGPGME] = "Library built without GPG support",
     [AUTHINFO_ENOMATCH] = "No matching entry was found",
     [AUTHINFO_EPARSE] = "Parsing error",
 };
@@ -358,14 +351,10 @@ authinfo_data_from_file(const char *path, struct authinfo_data_t **data)
     }
 
     if (authinfo_is_gpged_file(path)) {
-#ifdef HAVE_GPGME
         struct authinfo_data_t *decrypted_data;
 
         ret = authinfo_gpgme_decrypt(file_data, &decrypted_data);
         *data = decrypted_data;
-#else
-        ret = AUTHINFO_ENOGPGME;
-#endif  /* HAVE_GPGME */
 
         authinfo_data_free(file_data);
     } else {
@@ -669,7 +658,6 @@ authinfo_password_extract(struct authinfo_password_t *password,
     enum authinfo_result_t ret;
 
     if (password->encrypted) {
-#ifdef HAVE_GPGME
         struct authinfo_data_t *raw;
         struct authinfo_data_t *plain;
         struct authinfo_data_t *plainz;
@@ -698,9 +686,6 @@ authinfo_password_extract(struct authinfo_password_t *password,
 
         password->data = plainz;
         password->encrypted = false;
-#else
-        return AUTHINFO_ENOGPGME;
-#endif
     }
 
     *data = password->data->buffer;
@@ -751,8 +736,6 @@ authinfo_parse_entry_free(struct authinfo_parse_entry_t *entry)
 }
 
 /* internal */
-
-#ifdef HAVE_GPGME
 
 static enum authinfo_result_t
 authinfo_gpgme_init(void)
@@ -866,7 +849,6 @@ authinfo_gpgme_error2result(gpgme_error_t error)
     }
 }
 
-#endif  /* HAVE_GPGME */
 
 static bool
 authinfo_is_gpged_file(const char *path)
@@ -937,7 +919,6 @@ authinfo_find_files_in_dir(const char *dir,
     for (int i = 0; i < count; ++i) {
         const char *name = names[i];
 
-#ifdef HAVE_GPGME
         /* probe GPGed file first */
         size_t name_length = strlen(name);
         char gpged_name[name_length + strlen(GPG_EXT) + 1];
@@ -949,7 +930,6 @@ authinfo_find_files_in_dir(const char *dir,
         if (ret != AUTHINFO_ENOENT) {
             break;
         }
-#endif  /* HAVE_GPGME */
 
         ret = authinfo_find_file_in_dir(dir, name, path);
         if (ret != AUTHINFO_ENOENT) {

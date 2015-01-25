@@ -53,27 +53,12 @@ if test x$have_doxygen != xyes; then
      [Doxygen not found. API documentation won't be generated])
 fi
 
-AC_ARG_ENABLE([gpg],
-  [AS_HELP_STRING([--enable-gpg],
-          [enable gpg support @<:@default=yes@:>@])],
-  [enable_gpg="$enableval"],
-  [enable_gpg="yes"])
-
-if test x$enable_gpg = xyes; then
 dnl TODO: refine version restriction
-   AM_PATH_GPGME_PTHREAD([1.4.0], [have_gpgme=yes], [have_gpgme=no])
+AM_PATH_GPGME_PTHREAD([1.4.0], [have_gpgme=yes], [have_gpgme=no])
 
-   if test x$have_gpgme = xno; then
-      AC_MSG_WARN(
-        [GPGME library has not been found. GPG support will be disabled])
-   fi
+if test x$have_gpgme = xno; then
+   AC_MSG_ERROR([GPGME library has not been found.])
 fi
-
-if test x$have_gpgme = xyes; then
-   AC_DEFINE([HAVE_GPGME], [1], [Define to 1 if you want GPG support])
-fi
-
-AM_CONDITIONAL([HAVE_GPGME], [test x$have_gpgme = xyes])
 
 AC_ARG_ENABLE([cli],
   [AS_HELP_STRING([--enable-cli],

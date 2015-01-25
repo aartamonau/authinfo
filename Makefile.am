@@ -44,12 +44,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = authinfo.pc
 
 if HAVE_CHECK
-
-if HAVE_GPGME
-GPG_TESTS = authinfo_gpg_tests
-endif
-
-check_PROGRAMS = authinfo_parsing_tests $(GPG_TESTS)
+check_PROGRAMS = authinfo_parsing_tests authinfo_gpg_tests
 else
 check_PROGRAMS =
 endif
