@@ -62,36 +62,43 @@ setup(void)
 static void
 teardown(void)
 {
-    gpgme_ctx_t ctx;
-    gpgme_key_t test_key = NULL;
-    gpgme_key_t key;
+    /* since version 2.1 gpg prompts the confirmation dialog when secret key
+     * is being removed; so I had to comment this out;
+     *
+     * TODO: figure out if I can do better than this
+     */
 
-    GPG(gpgme_new(&ctx));
 
-    GPG(gpgme_op_keylist_start(ctx, NULL, 0));
-    while (true) {
-        gpgme_error_t err;
+    /* gpgme_ctx_t ctx; */
+    /* gpgme_key_t test_key = NULL; */
+    /* gpgme_key_t key; */
 
-        err = gpgme_op_keylist_next(ctx, &key);
-        if (gpg_err_code(err) == GPG_ERR_EOF) {
-            break;
-        }
-        GPG(err);
+    /* GPG(gpgme_new(&ctx)); */
 
-        if (key->uids && strcmp(key->uids->email, "authinfo@test.com") == 0) {
-            ck_assert(test_key == NULL);
-            test_key = key;
-        } else {
-            gpgme_key_release(key);
-        }
-    }
+    /* GPG(gpgme_op_keylist_start(ctx, NULL, 0)); */
+    /* while (true) { */
+    /*     gpgme_error_t err; */
 
-    if (test_key) {
-        GPG(gpgme_op_delete(ctx, test_key, 1));
-        gpgme_key_release(test_key);
-    }
+    /*     err = gpgme_op_keylist_next(ctx, &key); */
+    /*     if (gpg_err_code(err) == GPG_ERR_EOF) { */
+    /*         break; */
+    /*     } */
+    /*     GPG(err); */
 
-    gpgme_release(ctx);
+    /*     if (key->uids && strcmp(key->uids->email, "authinfo@test.com") == 0) { */
+    /*         ck_assert(test_key == NULL); */
+    /*         test_key = key; */
+    /*     } else { */
+    /*         gpgme_key_release(key); */
+    /*     } */
+    /* } */
+
+    /* if (test_key) { */
+    /*     GPG(gpgme_op_delete(ctx, test_key, 1)); */
+    /*     gpgme_key_release(test_key); */
+    /* } */
+
+    /* gpgme_release(ctx); */
 }
 
 #define TEST(name) \
