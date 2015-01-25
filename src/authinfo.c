@@ -726,14 +726,11 @@ authinfo_gpgme_init(void)
         return authinfo_gpgme_error2result(ret);
     }
 
-#ifdef LC_MESSAGES
     ret = gpgme_set_locale(NULL, LC_MESSAGES, setlocale(LC_MESSAGES, NULL));
     if (ret != GPG_ERR_NO_ERROR) {
         TRACE_GPGME_ERROR("Couldn't set GPGME locale", ret);
         return authinfo_gpgme_error2result(ret);
     }
-
-#endif  /* LC_MESSAGES */
 
     return AUTHINFO_OK;
 }
