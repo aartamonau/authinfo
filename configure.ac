@@ -57,7 +57,7 @@ dnl TODO: refine version restriction
 AM_PATH_GPGME_PTHREAD([1.4.0], [have_gpgme=yes], [have_gpgme=no])
 
 if test x$have_gpgme = xno; then
-   AC_MSG_ERROR([GPGME library has not been found.])
+   AC_MSG_ERROR([Couldn't find GPGME.])
 fi
 
 dnl TODO: version
