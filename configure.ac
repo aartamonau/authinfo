@@ -60,6 +60,13 @@ if test x$have_gpgme = xno; then
    AC_MSG_ERROR([GPGME library has not been found.])
 fi
 
+dnl TODO: version
+AM_PATH_LIBASSUAN([2.1.0], [have_libassuan=yes], [have_libassuan=no])
+
+if test x$have_libassuan = xno; then
+   AC_MSG_ERROR([Couldn't find libassuan.])
+fi
+
 AC_ARG_ENABLE([cli],
   [AS_HELP_STRING([--enable-cli],
           [build cli tool @<:@default=yes@:>@])],

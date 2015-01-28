@@ -7,9 +7,9 @@ if DEBUG
 DEBUG_CPPFLAGS = -DDEBUG
 endif
 
-AM_CFLAGS = $(GCC_CFLAGS) $(GPGME_PTHREAD_CFLAGS)
+AM_CFLAGS = $(GCC_CFLAGS) $(GPGME_PTHREAD_CFLAGS) $(LIBASSUAN_CFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/include/ $(DEBUG_CPPFLAGS)
-AM_LDFLAGS = $(GPGME_PTHREAD_LIBS)
+AM_LDFLAGS = $(GPGME_PTHREAD_LIBS) $(LIBASSUAN_LIBS)
 
 EXTRA_DIST = $(top_srcdir)/config.site/coverage \
              $(top_srcdir)/tests/files/gpg_tests/public.key \
