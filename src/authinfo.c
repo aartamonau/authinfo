@@ -101,9 +101,6 @@ static enum authinfo_result_t
 authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
                        struct authinfo_data_t **plain_text);
 
-static enum authinfo_result_t
-authinfo_gpgme_error2result(gpgme_error_t error);
-
 static bool authinfo_is_gpged_file(const char *path);
 
 static bool authinfo_is_gpged_password(const char *password);
@@ -739,13 +736,13 @@ authinfo_gpgme_init(void)
     ret = gpgme_set_locale(NULL, LC_CTYPE, ctx.lc_ctype);
     if (ret != GPG_ERR_NO_ERROR) {
         TRACE_GPG_ERROR("Couldn't set GPGME locale", ret);
-        return authinfo_gpgme_error2result(ret);
+        return authinfo_gpg_error2result(ret);
     }
 
     ret = gpgme_set_locale(NULL, LC_MESSAGES, ctx.lc_messages);
     if (ret != GPG_ERR_NO_ERROR) {
         TRACE_GPG_ERROR("Couldn't set GPGME locale", ret);
-        return authinfo_gpgme_error2result(ret);
+        return authinfo_gpg_error2result(ret);
     }
 
     return AUTHINFO_OK;
@@ -765,7 +762,7 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
     gpgme_ret = gpgme_new(&ctx);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
         TRACE_GPG_ERROR("Could not create GPGME context", gpgme_ret);
-        return authinfo_gpgme_error2result(gpgme_ret);
+        return authinfo_gpg_error2result(gpgme_ret);
     }
 
     gpgme_ret = gpgme_data_new_from_mem(&cipher,
@@ -773,14 +770,14 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
                                         cipher_text->size, 0);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
         TRACE_GPG_ERROR("Could not create GPGME data buffer", gpgme_ret);
-        ret = authinfo_gpgme_error2result(gpgme_ret);
+        ret = authinfo_gpg_error2result(gpgme_ret);
         goto gpgme_decrypt_release_ctx;
     }
 
     gpgme_ret = gpgme_data_set_encoding(cipher, GPGME_DATA_ENCODING_NONE);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
         TRACE_GPG_ERROR("Could not set buffer data encoding", gpgme_ret);
-        ret = authinfo_gpgme_error2result(gpgme_ret);
+        ret = authinfo_gpg_error2result(gpgme_ret);
         goto gpgme_decrypt_release_cipher;
     }
 
@@ -793,14 +790,14 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
     gpgme_ret = gpgme_data_new(&plain);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
         TRACE_GPG_ERROR("Could not create GPGME data buffer", gpgme_ret);
-        ret = authinfo_gpgme_error2result(gpgme_ret);
+        ret = authinfo_gpg_error2result(gpgme_ret);
         goto gpgme_decrypt_free_plain_text;
     }
 
     gpgme_ret = gpgme_op_decrypt(ctx, cipher, plain);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
         TRACE_GPG_ERROR("Could not decrypt cipher text", gpgme_ret);
-        ret = authinfo_gpgme_error2result(gpgme_ret);
+        ret = authinfo_gpg_error2result(gpgme_ret);
         goto gpgme_decrypt_release_plain;
     }
 
@@ -824,20 +821,6 @@ gpgme_decrypt_release_ctx:
 
     return ret;
 }
-
-static enum authinfo_result_t
-authinfo_gpgme_error2result(gpgme_error_t error)
-{
-    switch (gpg_err_code(error)) {
-    case GPG_ERR_DECRYPT_FAILED:
-        return AUTHINFO_EGPGME_DECRYPT_FAILED;
-    case GPG_ERR_BAD_PASSPHRASE:
-        return AUTHINFO_EGPGME_BAD_PASSPHRASE;
-    default:
-        return AUTHINFO_EGPGME;
-    }
-}
-
 
 static bool
 authinfo_is_gpged_file(const char *path)

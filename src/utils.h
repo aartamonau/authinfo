@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <gpg-error.h>
 
+#include "authinfo.h"
+
 #ifdef DEBUG
 #  define STRINGIFY(exp) STRINGIFY_HELPER(exp)
 #  define STRINGIFY_HELPER(exp) #exp
@@ -41,5 +43,8 @@
 #  define TRACE(...)
 #  define TRACE_GPG_ERROR(msg, error)
 #endif
+
+enum authinfo_result_t
+authinfo_gpg_error2result(gpg_error_t error);
 
 #endif /* _UTILS_H_ */

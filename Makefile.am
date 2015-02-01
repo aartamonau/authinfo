@@ -25,7 +25,8 @@ noinst_LTLIBRARIES = libauthinfo_impl.la
 libauthinfo_impl_la_SOURCES = src/utils.h \
                               src/base64.h \
                               src/authinfo.c \
-                              src/base64.c
+                              src/base64.c \
+                              src/utils.c
 
 lib_LTLIBRARIES = libauthinfo.la
 libauthinfo_la_SOURCES =
