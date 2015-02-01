@@ -92,17 +92,6 @@ static struct authinfo_ctx_t ctx = {0};
 /* internal macros */
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
-
-#ifdef DEBUG
-#define TRACE_GPGME_ERROR(msg, error) \
-    do { \
-        char buf[128]; \
-        gpgme_strerror_r(error, buf, sizeof(buf)); \
-        TRACE("%s: %s: %s\n", msg, gpgme_strsource(error), buf); \
-    } while (0);
-#else
-#define TRACE_GPGME_ERROR(msg, error)
-#endif  /* DEBUG */
 /* internal macros end */
 
 /* internal functions prototypes */
