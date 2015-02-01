@@ -738,13 +738,13 @@ authinfo_gpgme_init(void)
 
     ret = gpgme_set_locale(NULL, LC_CTYPE, ctx.lc_ctype);
     if (ret != GPG_ERR_NO_ERROR) {
-        TRACE_GPGME_ERROR("Couldn't set GPGME locale", ret);
+        TRACE_GPG_ERROR("Couldn't set GPGME locale", ret);
         return authinfo_gpgme_error2result(ret);
     }
 
     ret = gpgme_set_locale(NULL, LC_MESSAGES, ctx.lc_messages);
     if (ret != GPG_ERR_NO_ERROR) {
-        TRACE_GPGME_ERROR("Couldn't set GPGME locale", ret);
+        TRACE_GPG_ERROR("Couldn't set GPGME locale", ret);
         return authinfo_gpgme_error2result(ret);
     }
 
@@ -764,7 +764,7 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
 
     gpgme_ret = gpgme_new(&ctx);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
-        TRACE_GPGME_ERROR("Could not create GPGME context", gpgme_ret);
+        TRACE_GPG_ERROR("Could not create GPGME context", gpgme_ret);
         return authinfo_gpgme_error2result(gpgme_ret);
     }
 
@@ -772,14 +772,14 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
                                         cipher_text->buffer,
                                         cipher_text->size, 0);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
-        TRACE_GPGME_ERROR("Could not create GPGME data buffer", gpgme_ret);
+        TRACE_GPG_ERROR("Could not create GPGME data buffer", gpgme_ret);
         ret = authinfo_gpgme_error2result(gpgme_ret);
         goto gpgme_decrypt_release_ctx;
     }
 
     gpgme_ret = gpgme_data_set_encoding(cipher, GPGME_DATA_ENCODING_NONE);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
-        TRACE_GPGME_ERROR("Could not set buffer data encoding", gpgme_ret);
+        TRACE_GPG_ERROR("Could not set buffer data encoding", gpgme_ret);
         ret = authinfo_gpgme_error2result(gpgme_ret);
         goto gpgme_decrypt_release_cipher;
     }
@@ -792,14 +792,14 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
 
     gpgme_ret = gpgme_data_new(&plain);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
-        TRACE_GPGME_ERROR("Could not create GPGME data buffer", gpgme_ret);
+        TRACE_GPG_ERROR("Could not create GPGME data buffer", gpgme_ret);
         ret = authinfo_gpgme_error2result(gpgme_ret);
         goto gpgme_decrypt_free_plain_text;
     }
 
     gpgme_ret = gpgme_op_decrypt(ctx, cipher, plain);
     if (gpgme_ret != GPG_ERR_NO_ERROR) {
-        TRACE_GPGME_ERROR("Could not decrypt cipher text", gpgme_ret);
+        TRACE_GPG_ERROR("Could not decrypt cipher text", gpgme_ret);
         ret = authinfo_gpgme_error2result(gpgme_ret);
         goto gpgme_decrypt_release_plain;
     }

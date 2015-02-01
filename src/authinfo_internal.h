@@ -23,7 +23,7 @@
 #define _AUTHINFO_INTERNAL_H_
 
 #include <stdio.h>
-#include <gpgme.h>
+#include <gpg-error.h>
 
 #ifdef DEBUG
 #  define STRINGIFY(exp) STRINGIFY_HELPER(exp)
@@ -31,15 +31,15 @@
 #  define TRACE(...) \
   fprintf(stderr, \
           "TRACE: " __FILE__  ":" STRINGIFY(__LINE__) ":    "  __VA_ARGS__)
-#  define TRACE_GPGME_ERROR(msg, error)                          \
+#  define TRACE_GPG_ERROR(msg, error)                            \
     do {                                                         \
         char buf[128];                                           \
-        gpgme_strerror_r(error, buf, sizeof(buf));               \
-        TRACE("%s: %s: %s\n", msg, gpgme_strsource(error), buf); \
+        gpg_strerror_r(error, buf, sizeof(buf));                 \
+        TRACE("%s: %s: %s\n", msg, gpg_strsource(error), buf);   \
     } while (0);
 #else
 #  define TRACE(...)
-#  define TRACE_GPGME_ERROR(msg, error)
+#  define TRACE_GPG_ERROR(msg, error)
 #endif
 
 #endif /* _AUTHINFO_INTERNAL_H_ */
