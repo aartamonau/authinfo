@@ -41,7 +41,7 @@
 #include "base64.h"
 
 #include "authinfo.h"
-#include "authinfo_internal.h"
+#include "utils.h"
 
 #define DOT "."
 #define GPG_EXT ".gpg"

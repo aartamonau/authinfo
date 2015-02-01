@@ -19,8 +19,8 @@
  * along with authinfo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _AUTHINFO_INTERNAL_H_
-#define _AUTHINFO_INTERNAL_H_
+#ifndef _UTILS_H_
+#define _UTILS_H_
 
 #include <stdio.h>
 #include <gpg-error.h>
@@ -42,4 +42,4 @@
 #  define TRACE_GPG_ERROR(msg, error)
 #endif
 
-#endif /* _AUTHINFO_INTERNAL_H_ */
+#endif /* _UTILS_H_ */
