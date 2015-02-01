@@ -22,11 +22,11 @@ EXTRA_DIST = $(top_srcdir)/config.site/coverage \
 pkginclude_HEADERS = include/authinfo.h
 
 noinst_LTLIBRARIES = libauthinfo_impl.la
-libauthinfo_impl_la_SOURCES = src/utils.h \
-                              src/base64.h \
-                              src/authinfo.c \
-                              src/base64.c \
-                              src/utils.c
+libauthinfo_impl_la_SOURCES = src/utils.h    \
+                              src/utils.c    \
+                              src/base64.h   \
+                              src/base64.c   \
+                              src/authinfo.c
 
 lib_LTLIBRARIES = libauthinfo.la
 libauthinfo_la_SOURCES =
