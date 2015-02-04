@@ -35,7 +35,7 @@
           "TRACE: " __FILE__  ":" STRINGIFY(__LINE__) ":    " __VA_ARGS__)
 #  define TRACE_GPG_ERROR(msg, error)                            \
     do {                                                         \
-        char buf[128];                                           \
+        char buf[128] = {0};                                     \
         gpg_strerror_r(error, buf, sizeof(buf));                 \
         TRACE("%s: %s: %s\n", msg, gpg_strsource(error), buf);   \
     } while (0);
