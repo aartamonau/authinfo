@@ -24,6 +24,10 @@
 enum authinfo_result_t
 authinfo_gpg_error2result(gpg_error_t error)
 {
+    if (error == GPG_ERR_NO_ERROR) {
+        return AUTHINFO_OK;
+    }
+
     switch (gpg_err_code(error)) {
     case GPG_ERR_DECRYPT_FAILED:
         return AUTHINFO_EGPGME_DECRYPT_FAILED;
