@@ -32,7 +32,7 @@
 #  define STRINGIFY_HELPER(exp) #exp
 #  define TRACE(...) \
   fprintf(stderr, \
-          "TRACE: " __FILE__  ":" STRINGIFY(__LINE__) ":    "  __VA_ARGS__)
+          "TRACE: " __FILE__  ":" STRINGIFY(__LINE__) ":    " __VA_ARGS__)
 #  define TRACE_GPG_ERROR(msg, error)                            \
     do {                                                         \
         char buf[128];                                           \
