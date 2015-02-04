@@ -27,6 +27,12 @@
 #include "authinfo.h"
 
 struct pinentry_settings_t {
+    const char *lc_ctype;
+    const char *lc_messages;
+
+    const char *title;
+    const char *description;
+    const char *prompt;
 };
 
 struct pinentry_t {
