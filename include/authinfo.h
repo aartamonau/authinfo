@@ -41,9 +41,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#if 0 /* just to make Emacs auto-indent happy */
-}
-#endif
 #endif  /* __cplusplus */
 
 /// Indicates if certain call completed successfully
