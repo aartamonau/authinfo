@@ -41,21 +41,13 @@
 #include "base64.h"
 
 #include "authinfo.h"
+#include "authinfo_data.h"
 #include "utils.h"
 
 #define DOT "."
 #define GPG_EXT ".gpg"
 #define GPG_PREFIX "gpg:"
 #define TOKEN_SIZE_MAX 8192
-
-struct authinfo_data_t {
-    enum { STATIC, ALLOCATED } type;
-    enum { USER, MALLOC, GPGME } buffer_type;
-    bool sensitive;
-
-    const char *buffer;
-    size_t size;
-};
 
 struct authinfo_password_t {
     struct authinfo_data_t *data;
