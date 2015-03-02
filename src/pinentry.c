@@ -90,6 +90,12 @@ pinentry_release(struct pinentry_t *pinentry)
     assuan_release(pinentry->ctx);
 }
 
+enum authinfo_result_t
+pinentry_set_error(struct pinentry_t *pinentry, const char *error)
+{
+    return pinentry_command(pinentry, "SETERROR %s", error);
+}
+
 static enum authinfo_result_t
 pinentry_command(struct pinentry_t *pinentry, const char *fmt, ...)
 {

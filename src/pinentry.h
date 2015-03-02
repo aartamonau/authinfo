@@ -46,4 +46,7 @@ pinentry_new(const struct pinentry_settings_t *settings,
 void
 pinentry_release(struct pinentry_t *pinentry);
 
+enum authinfo_result_t
+pinentry_set_error(struct pinentry_t *pinentry, const char *error);
+
 #endif /* _PINENTRY_H_ */
