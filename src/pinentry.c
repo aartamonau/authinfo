@@ -29,7 +29,7 @@ static enum authinfo_result_t
 pinentry_command(struct pinentry_t *pinentry, const char *fmt, ...);
 
 enum authinfo_result_t
-pinentry_start(const struct pinentry_settings_t *settings,
+pinentry_new(const struct pinentry_settings_t *settings,
                struct pinentry_t *pinentry)
 {
     gpg_error_t gpg_ret;

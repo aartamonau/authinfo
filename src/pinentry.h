@@ -40,7 +40,7 @@ struct pinentry_t {
 };
 
 enum authinfo_result_t
-pinentry_start(const struct pinentry_settings_t *settings,
-               struct pinentry_t *pinentry);
+pinentry_new(const struct pinentry_settings_t *settings,
+             struct pinentry_t *pinentry);
 
 #endif /* _PINENTRY_H_ */
