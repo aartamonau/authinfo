@@ -73,6 +73,7 @@ pinentry_new(const struct pinentry_settings_t *settings,
     cmd("OPTION lc-ctype=%s", settings->lc_ctype);
     cmd("OPTION lc-messages=%s", settings->lc_messages);
     cmd("OPTION grab");
+    cmd("SETTIMEOUT %d", settings->timeout);
     cmd("SETTITLE %s", settings->title);
     cmd("SETDESC %s", settings->description);
     cmd("SETPROMPT %s", settings->prompt);
