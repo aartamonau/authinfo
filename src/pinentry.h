@@ -43,4 +43,7 @@ enum authinfo_result_t
 pinentry_new(const struct pinentry_settings_t *settings,
              struct pinentry_t *pinentry);
 
+void
+pinentry_release(struct pinentry_t *pinentry);
+
 #endif /* _PINENTRY_H_ */

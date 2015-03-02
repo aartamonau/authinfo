@@ -76,6 +76,12 @@ pinentry_start_release_context:
     return ret;
 }
 
+void
+pinentry_release(struct pinentry_t *pinentry)
+{
+    assuan_release(pinentry->ctx);
+}
+
 static enum authinfo_result_t
 pinentry_command(struct pinentry_t *pinentry, const char *fmt, ...)
 {
