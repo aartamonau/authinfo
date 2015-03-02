@@ -32,9 +32,13 @@
 #define FORMAT_ATTR(type, fmt, args)
 #endif
 
+typedef gpg_error_t (*assuan_data_cb_t)(void *, const void *, size_t);
+
 static enum authinfo_result_t
-pinentry_command(struct pinentry_t *pinentry, const char *fmt, ...)
-    FORMAT_ATTR(printf, 2, 3);
+pinentry_command(struct pinentry_t *pinentry,
+                 assuan_data_cb_t data_cb, void *arg,
+                 const char *fmt, ...)
+    FORMAT_ATTR(printf, 4, 5);
 
 enum authinfo_result_t
 pinentry_new(const struct pinentry_settings_t *settings,
@@ -60,10 +64,10 @@ pinentry_new(const struct pinentry_settings_t *settings,
         goto pinentry_start_release_context;
     }
 
-#define cmd(...)                                    \
-    ret = pinentry_command(pinentry, __VA_ARGS__);  \
-    if (ret != AUTHINFO_OK) {                       \
-        goto pinentry_start_release_context;        \
+#define cmd(...)                                                \
+    ret = pinentry_command(pinentry, NULL, NULL, __VA_ARGS__);  \
+    if (ret != AUTHINFO_OK) {                                   \
+        goto pinentry_start_release_context;                    \
     }
 
     cmd("OPTION lc-ctype=%s", settings->lc_ctype);
@@ -93,11 +97,13 @@ pinentry_release(struct pinentry_t *pinentry)
 enum authinfo_result_t
 pinentry_set_error(struct pinentry_t *pinentry, const char *error)
 {
-    return pinentry_command(pinentry, "SETERROR %s", error);
+    return pinentry_command(pinentry, NULL, NULL, "SETERROR %s", error);
 }
 
 static enum authinfo_result_t
-pinentry_command(struct pinentry_t *pinentry, const char *fmt, ...)
+pinentry_command(struct pinentry_t *pinentry,
+                 assuan_data_cb_t data_cb, void *arg,
+                 const char *fmt, ...)
 {
     va_list ap;
     char command[1024];
@@ -110,7 +116,7 @@ pinentry_command(struct pinentry_t *pinentry, const char *fmt, ...)
     TRACE("Sending '%s' to pinentry\n", command);
 
     ret = assuan_transact(pinentry->ctx, command,
-                          NULL, NULL, NULL, NULL, NULL, NULL);
+                          data_cb, arg, NULL, NULL, NULL, NULL);
     if (ret != GPG_ERR_NO_ERROR) {
         TRACE_GPG_ERROR("Pinentry command failed", ret);
         return authinfo_gpg_error2result(ret);
