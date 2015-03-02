@@ -25,8 +25,16 @@
 #include "pinentry.h"
 #include "utils.h"
 
+#ifdef __GNUC__
+#define FORMAT_ATTR(type, fmt, args) \
+    __attribute__((format (type, fmt, args)))
+#else
+#define FORMAT_ATTR(type, fmt, args)
+#endif
+
 static enum authinfo_result_t
-pinentry_command(struct pinentry_t *pinentry, const char *fmt, ...);
+pinentry_command(struct pinentry_t *pinentry, const char *fmt, ...)
+    FORMAT_ATTR(printf, 2, 3);
 
 enum authinfo_result_t
 pinentry_new(const struct pinentry_settings_t *settings,
