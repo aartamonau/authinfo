@@ -51,4 +51,7 @@ pinentry_release(struct pinentry_t *pinentry);
 enum authinfo_result_t
 pinentry_set_error(struct pinentry_t *pinentry, const char *error);
 
+enum authinfo_result_t
+pinentry_get_pin(struct pinentry_t *pinentry, struct authinfo_data_t **pin);
+
 #endif /* _PINENTRY_H_ */

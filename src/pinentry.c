@@ -19,9 +19,11 @@
  * along with authinfo.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 
+#include "authinfo_data.h"
 #include "pinentry.h"
 #include "utils.h"
 
@@ -77,7 +79,6 @@ pinentry_new(const struct pinentry_settings_t *settings,
     cmd("SETTITLE %s", settings->title);
     cmd("SETDESC %s", settings->description);
     cmd("SETPROMPT %s", settings->prompt);
-    cmd("GETPIN", settings->prompt);
 
 #undef cmd
 
@@ -99,6 +100,47 @@ enum authinfo_result_t
 pinentry_set_error(struct pinentry_t *pinentry, const char *error)
 {
     return pinentry_command(pinentry, NULL, NULL, "SETERROR %s", error);
+}
+
+static gpg_error_t
+pinentry_get_pin_cb(void *arg, const void *pin, size_t size)
+{
+    struct authinfo_data_t *data = arg;
+
+    return gpg_error(GPG_ERR_ENOMEM);
+
+    data->size = size;
+    data->buffer = malloc(size);
+    if (data->buffer == NULL) {
+        return gpg_error(GPG_ERR_ENOMEM);
+    }
+
+    memcpy((void *) data->buffer, pin, size);
+
+    return GPG_ERR_NO_ERROR;
+}
+
+enum authinfo_result_t
+pinentry_get_pin(struct pinentry_t *pinentry, struct authinfo_data_t **data)
+{
+    gpg_error_t ret;
+
+    *data = malloc(sizeof(**data));
+    if (*data == NULL) {
+        return AUTHINFO_ENOMEM;
+    }
+
+    (*data)->type = ALLOCATED;
+    (*data)->buffer_type = MALLOC;
+    (*data)->sensitive = true;
+
+    ret = pinentry_command(pinentry,
+                           pinentry_get_pin_cb, *data, "GETPIN");
+    if (ret != AUTHINFO_OK) {
+        free(*data);
+    }
+
+    return ret;
 }
 
 static enum authinfo_result_t
