@@ -33,6 +33,8 @@ authinfo_gpg_error2result(gpg_error_t error)
         return AUTHINFO_EGPGME_DECRYPT_FAILED;
     case GPG_ERR_BAD_PASSPHRASE:
         return AUTHINFO_EGPGME_BAD_PASSPHRASE;
+    case GPG_ERR_ENOMEM:
+        return AUTHINFO_ENOMEM;
     default:
         return AUTHINFO_EGPGME;
     }
