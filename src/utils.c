@@ -35,6 +35,8 @@ authinfo_gpg_error2result(gpg_error_t error)
         return AUTHINFO_EGPG_BAD_PASSPHRASE;
     case GPG_ERR_ENOMEM:
         return AUTHINFO_ENOMEM;
+    case GPG_ERR_CANCELED:
+        return AUTHINFO_EGPG_CANCELED;
     default:
         return AUTHINFO_EGPG;
     }

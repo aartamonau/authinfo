@@ -54,6 +54,7 @@ enum authinfo_result_t {
     AUTHINFO_EGPG_DECRYPT_FAILED, /**< Decryption failed. */
     AUTHINFO_EGPG_BAD_PASSPHRASE, /**< Invalid passphrase supplied. */
     AUTHINFO_EGPG_BAD_BASE64,     /**< Malformed base64-encoded password. */
+    AUTHINFO_EGPG_CANCELED,       /**< Operation canceled. */
     AUTHINFO_ENOMATCH,            /**< No matching entry was found. */
     AUTHINFO_EPARSE,              /**< Parse error. */
     AUTHINFO_RESULT_MAX
