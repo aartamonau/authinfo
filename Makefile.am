@@ -9,9 +9,14 @@ endif
 
 if GCC
 GCC_CFLAGS = -fvisibility=hidden -Wall -Werror
+
+if SANITIZER
+SANITIZER_CFLAGS = -fsanitize=undefined -fsanitize=address
 endif
 
-AM_CFLAGS = $(GCC_CFLAGS) $(GPGME_PTHREAD_CFLAGS) $(LIBASSUAN_CFLAGS)
+endif
+
+AM_CFLAGS = $(GCC_CFLAGS) $(SANITIZER_CFLAGS) $(GPGME_PTHREAD_CFLAGS) $(LIBASSUAN_CFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/include/ $(DEBUG_CPPFLAGS)
 AM_LDFLAGS = $(GPGME_PTHREAD_LIBS) $(LIBASSUAN_LIBS)
 

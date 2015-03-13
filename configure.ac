@@ -34,6 +34,13 @@ AC_ARG_ENABLE([debug],
   [enable_debug="no"])
 AM_CONDITIONAL([DEBUG], [test x$enable_debug = xyes])
 
+AC_ARG_ENABLE([sanitizer],
+  [AS_HELP_STRING([--enable-sanitizer],
+          [enable address and undefined behavior sanitizers @<:@default=no@:>@])],
+  [enable_sanitizer="$enableval"],
+  [enable_sanitizer="no"])
+AM_CONDITIONAL([SANITIZER], [test x$enable_sanitizer = xyes])
+
 AC_CHECK_PROG([have_lcov], [lcov], [yes])
 AM_CONDITIONAL([HAVE_LCOV], [test x$have_lcov = xyes])
 
