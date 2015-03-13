@@ -107,8 +107,6 @@ pinentry_get_pin_cb(void *arg, const void *pin, size_t size)
 {
     struct authinfo_data_t *data = arg;
 
-    return gpg_error(GPG_ERR_ENOMEM);
-
     data->size = size;
     data->buffer = malloc(size);
     if (data->buffer == NULL) {
