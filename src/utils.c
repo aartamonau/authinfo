@@ -30,12 +30,12 @@ authinfo_gpg_error2result(gpg_error_t error)
 
     switch (gpg_err_code(error)) {
     case GPG_ERR_DECRYPT_FAILED:
-        return AUTHINFO_EGPGME_DECRYPT_FAILED;
+        return AUTHINFO_EGPG_DECRYPT_FAILED;
     case GPG_ERR_BAD_PASSPHRASE:
-        return AUTHINFO_EGPGME_BAD_PASSPHRASE;
+        return AUTHINFO_EGPG_BAD_PASSPHRASE;
     case GPG_ERR_ENOMEM:
         return AUTHINFO_ENOMEM;
     default:
-        return AUTHINFO_EGPGME;
+        return AUTHINFO_EGPG;
     }
 }

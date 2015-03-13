@@ -168,7 +168,7 @@ TEST(gpged_password_bad)
                  TOP_SRCDIR "/tests/files/gpg_tests/gpged_password_bad", &data));
     AUTHINFO(authinfo_simple_query(data, NULL, NULL, NULL, &entry, &error));
     ck_assert_int_eq(authinfo_password_extract(entry.password, &password),
-                     AUTHINFO_EGPGME_BAD_BASE64);
+                     AUTHINFO_EGPG_BAD_BASE64);
 
     authinfo_parse_entry_free(&entry);
     authinfo_data_free(data);

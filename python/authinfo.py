@@ -91,16 +91,16 @@ class AuthinfoError(Exception):
     `AuthinfoError.AUTHINFO_EUNKNOWN`
        Unknown error occurred
 
-    `AuthinfoError.AUTHINFO_EGPGME`
+    `AuthinfoError.AUTHINFO_EGPG`
        Unexpected GPG error
 
-    `AuthinfoError.AUTHINFO_EGPGME_DECRYPT_FAILED`
+    `AuthinfoError.AUTHINFO_EGPG_DECRYPT_FAILED`
        Failed to decrypt authinfo file
 
-    `AuthinfoError.AUTHINFO_EGPGME_BAD_PASSPHRASE`
+    `AuthinfoError.AUTHINFO_EGPG_BAD_PASSPHRASE`
        Bad passphrase supplied by user
 
-    `AuthinfoError.AUTHINFO_EGPGME_BAD_BASE64`
+    `AuthinfoError.AUTHINFO_EGPG_BAD_BASE64`
        Malformed base64-encode password
 
     `AuthinfoError.AUTHINFO_ENOMATCH`
@@ -112,17 +112,17 @@ class AuthinfoError(Exception):
 
     __slots__ = ['type', 'msg']
 
-    AUTHINFO_OK                    = 0
-    AUTHINFO_EACCESS               = 1
-    AUTHINFO_ENOENT                = 2
-    AUTHINFO_ENOMEM                = 3
-    AUTHINFO_EUNKNOWN              = 4
-    AUTHINFO_EGPGME                = 5
-    AUTHINFO_EGPGME_DECRYPT_FAILED = 6
-    AUTHINFO_EGPGME_BAD_PASSPHRASE = 7
-    AUTHINFO_EGPGME_BAD_BASE64     = 8
-    AUTHINFO_ENOMATCH              = 9
-    AUTHINFO_EPARSE                = 10
+    AUTHINFO_OK                  = 0
+    AUTHINFO_EACCESS             = 1
+    AUTHINFO_ENOENT              = 2
+    AUTHINFO_ENOMEM              = 3
+    AUTHINFO_EUNKNOWN            = 4
+    AUTHINFO_EGPG                = 5
+    AUTHINFO_EGPG_DECRYPT_FAILED = 6
+    AUTHINFO_EGPG_BAD_PASSPHRASE = 7
+    AUTHINFO_EGPG_BAD_BASE64     = 8
+    AUTHINFO_ENOMATCH            = 9
+    AUTHINFO_EPARSE              = 10
 
     def __init__(self, type):
         super(AuthinfoError, self).__init__()

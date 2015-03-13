@@ -221,10 +221,10 @@ static const char *authinfo_result2str[] = {
     [AUTHINFO_ENOENT] = "File or directory not found",
     [AUTHINFO_ENOMEM] = "Could not allocate memory",
     [AUTHINFO_EUNKNOWN] = "Unknown error happened",
-    [AUTHINFO_EGPGME] = "Unknown GPGME error",
-    [AUTHINFO_EGPGME_DECRYPT_FAILED] = "Decryption failed",
-    [AUTHINFO_EGPGME_BAD_PASSPHRASE] = "Bad passphrase supplied",
-    [AUTHINFO_EGPGME_BAD_BASE64] = "Malformed base64-encoded password",
+    [AUTHINFO_EGPG] = "Unknown GPG error",
+    [AUTHINFO_EGPG_DECRYPT_FAILED] = "Decryption failed",
+    [AUTHINFO_EGPG_BAD_PASSPHRASE] = "Bad passphrase supplied",
+    [AUTHINFO_EGPG_BAD_BASE64] = "Malformed base64-encoded password",
     [AUTHINFO_ENOMATCH] = "No matching entry was found",
     [AUTHINFO_EPARSE] = "Parsing error",
 };
@@ -1424,7 +1424,7 @@ authinfo_b64decode(const struct authinfo_data_t *b64data,
                         b64data->buffer + strlen(GPG_PREFIX), b64data->size);
     if (ret == -1) {
         authinfo_data_free(*data);
-        return AUTHINFO_EGPGME_BAD_BASE64;
+        return AUTHINFO_EGPG_BAD_BASE64;
     }
 
     (*data)->size = ret;

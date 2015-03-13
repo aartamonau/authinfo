@@ -45,17 +45,17 @@ extern "C" {
 
 /// Indicates if certain call completed successfully
 enum authinfo_result_t {
-    AUTHINFO_OK,                /**< Everything went fine. */
-    AUTHINFO_EACCESS,           /**< Couldn't access some path. */
-    AUTHINFO_ENOENT,            /**< Path does not exist.  */
-    AUTHINFO_ENOMEM,            /**< Not enough memory. */
-    AUTHINFO_EUNKNOWN,          /**< Some unexpected condition happened. */
-    AUTHINFO_EGPGME,            /**< Generic GPGME error. */
-    AUTHINFO_EGPGME_DECRYPT_FAILED, /**< Decryption failed. */
-    AUTHINFO_EGPGME_BAD_PASSPHRASE, /**< Invalid passphrase supplied. */
-    AUTHINFO_EGPGME_BAD_BASE64, /**< Malformed base64-encoded password. */
-    AUTHINFO_ENOMATCH,          /**< No matching entry was found. */
-    AUTHINFO_EPARSE,            /**< Parse error. */
+    AUTHINFO_OK,                  /**< Everything went fine. */
+    AUTHINFO_EACCESS,             /**< Couldn't access some path. */
+    AUTHINFO_ENOENT,              /**< Path does not exist.  */
+    AUTHINFO_ENOMEM,              /**< Not enough memory. */
+    AUTHINFO_EUNKNOWN,            /**< Some unexpected condition happened. */
+    AUTHINFO_EGPG,                /**< Generic GPGME error. */
+    AUTHINFO_EGPG_DECRYPT_FAILED, /**< Decryption failed. */
+    AUTHINFO_EGPG_BAD_PASSPHRASE, /**< Invalid passphrase supplied. */
+    AUTHINFO_EGPG_BAD_BASE64,     /**< Malformed base64-encoded password. */
+    AUTHINFO_ENOMATCH,            /**< No matching entry was found. */
+    AUTHINFO_EPARSE,              /**< Parse error. */
     AUTHINFO_RESULT_MAX
 };
 
@@ -73,7 +73,7 @@ enum authinfo_result_t {
  * @retval AUTHINFO_OK
  * @retval AUTHINFO_ENOMEM
  * @retval AUTHINFO_EUNKNOWN
- * @retval AUTHINFO_EGPGME
+ * @retval AUTHINFO_EGPG
  */
 EXPORT_FUNCTION enum authinfo_result_t authinfo_init(const char *name);
 
@@ -127,9 +127,9 @@ authinfo_data_from_mem(const char *buffer, size_t size,
  * @retval AUTHINFO_ENOENT
  * @retval AUTHINFO_EACCESS
  * @retval AUTHINFO_EUNKNOWN
- * @retval AUTHINFO_EGPGME
- * @retval AUTHINFO_EGPGME_DECRYPT_FAILED
- * @retval AUTHINFO_EGPGME_BAD_PASSPHRASE
+ * @retval AUTHINFO_EGPG
+ * @retval AUTHINFO_EGPG_DECRYPT_FAILED
+ * @retval AUTHINFO_EGPG_BAD_PASSPHRASE
  */
 EXPORT_FUNCTION enum authinfo_result_t
 authinfo_data_from_file(const char *path, struct authinfo_data_t **data);
@@ -238,10 +238,10 @@ EXPORT_FUNCTION void authinfo_parse(const struct authinfo_data_t *data,
  * @param[out] data extracted password is returned here
  *
  * @retval AUTHINFO_OK
- * @retval AUTHINFO_EGPGME
- * @retval AUTHINFO_EGPGME_BAD_BASE64
- * @retval AUTHINFO_EGPGME_DECRYPT_FAILED
- * @retval AUTHINFO_EGPGME_BAD_PASSPHRASE
+ * @retval AUTHINFO_EGPG
+ * @retval AUTHINFO_EGPG_BAD_BASE64
+ * @retval AUTHINFO_EGPG_DECRYPT_FAILED
+ * @retval AUTHINFO_EGPG_BAD_PASSPHRASE
  */
 EXPORT_FUNCTION enum authinfo_result_t
 authinfo_password_extract(struct authinfo_password_t *password,
