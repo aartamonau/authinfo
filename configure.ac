@@ -16,13 +16,8 @@ if test "x${ac_cv_prog_cc_c99}" = xno; then
   AC_MSG_ERROR([A compiler supporting c99 is required])
 fi
 
-AC_CHECK_DECL([__GNUC__], [GCC=yes], [GCC=no])
-
-if test "x${GCC}" = xyes; then
-  GCC_CFLAGS="-fvisibility=hidden -Wall -Werror"
-fi
-
-AC_SUBST([GCC_CFLAGS])
+AC_CHECK_DECL([__GNUC__], [gcc=yes], [gcc=no])
+AM_CONDITIONAL([GCC], [test x$gcc = xyes])
 
 AC_DEFINE_DIR([SYSCONF_DIR], [sysconfdir],
   [System configuration directory (typically /etc).])
