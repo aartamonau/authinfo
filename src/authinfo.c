@@ -90,6 +90,11 @@ static struct authinfo_ctx_t ctx = {0};
 static enum authinfo_result_t authinfo_gpgme_init(void);
 
 static enum authinfo_result_t
+authinfo_gpgme_do_decrypt(gpgme_ctx_t ctx,
+                          gpgme_data_t cipher_text,
+                          gpgme_data_t plain_text);
+
+static enum authinfo_result_t
 authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
                        struct authinfo_data_t **plain_text);
 
@@ -742,6 +747,20 @@ authinfo_gpgme_init(void)
 }
 
 static enum authinfo_result_t
+authinfo_gpgme_do_decrypt(gpgme_ctx_t ctx,
+                          gpgme_data_t cipher_text,
+                          gpgme_data_t plain_text)
+{
+    int ret = gpgme_op_decrypt(ctx, cipher_text, plain_text);
+    if (ret != GPG_ERR_NO_ERROR) {
+        TRACE_GPG_ERROR("Could not decrypt cipher text", ret);
+        return authinfo_gpg_error2result(ret);
+    }
+
+    return AUTHINFO_OK;
+}
+
+static enum authinfo_result_t
 authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
                        struct authinfo_data_t **plain_text)
 {
@@ -787,10 +806,8 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
         goto gpgme_decrypt_free_plain_text;
     }
 
-    gpgme_ret = gpgme_op_decrypt(ctx, cipher, plain);
-    if (gpgme_ret != GPG_ERR_NO_ERROR) {
-        TRACE_GPG_ERROR("Could not decrypt cipher text", gpgme_ret);
-        ret = authinfo_gpg_error2result(gpgme_ret);
+    ret = authinfo_gpgme_do_decrypt(ctx, cipher, plain);
+    if (ret != AUTHINFO_OK) {
         goto gpgme_decrypt_release_plain;
     }
 
