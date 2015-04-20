@@ -43,6 +43,7 @@
 #include "authinfo.h"
 #include "authinfo_data.h"
 #include "utils.h"
+#include "pinentry.h"
 
 #define DOT "."
 #define GPG_EXT ".gpg"
@@ -81,6 +82,11 @@ struct authinfo_ctx_t {
 
 static struct authinfo_ctx_t ctx = {0};
 
+struct authinfo_passphrase_cb_ctx_t {
+    enum authinfo_result_t ret;
+    struct pinentry_t *pinentry;
+};
+
 /* internal macros */
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
@@ -93,6 +99,16 @@ static enum authinfo_result_t
 authinfo_gpgme_do_decrypt(gpgme_ctx_t ctx,
                           gpgme_data_t cipher_text,
                           gpgme_data_t plain_text);
+
+static gpg_error_t
+authinfo_gpgme_passphrase_cb(void *data,
+                             const char *uid_hint, const char *info,
+                             int was_bad, int fd);
+
+static enum authinfo_result_t
+authinfo_gpgme_decrypt_loopback(gpgme_ctx_t ctx,
+                                gpgme_data_t cipher_text,
+                                gpgme_data_t plain_text);
 
 static enum authinfo_result_t
 authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
@@ -233,6 +249,7 @@ static const char *authinfo_result2str[] = {
     [AUTHINFO_EGPG_CANCELED] = "Operation canceled",
     [AUTHINFO_ENOMATCH] = "No matching entry was found",
     [AUTHINFO_EPARSE] = "Parsing error",
+    [AUTHINFO_ENOLOOPBACK] = "[internal] loopback pinentry disallowed",
 };
 
 const char *
@@ -760,6 +777,109 @@ authinfo_gpgme_do_decrypt(gpgme_ctx_t ctx,
     return AUTHINFO_OK;
 }
 
+static gpg_error_t
+authinfo_gpgme_passphrase_cb(void *data,
+                             const char *uid_hint, const char *info,
+                             int was_bad, int fd)
+{
+    int ret;
+    struct authinfo_passphrase_cb_ctx_t *ctx = data;
+    struct authinfo_data_t *pindata;
+
+    ret = pinentry_get_pin(ctx->pinentry, &pindata);
+    if (ret != AUTHINFO_OK) {
+        TRACE("pinentry_get_pin failed: %s\n", authinfo_strerror(ret));
+
+        ctx->ret = ret;
+        return gpg_error(GPG_ERR_GENERAL);
+    }
+
+    struct {
+        const void *data;
+        size_t size;
+    } datavec[] = {
+        {
+            .data = pindata->buffer,
+            .size = pindata->size,
+        },
+
+        {
+            .data = "\n",
+            .size = sizeof("\n")
+        },
+    };
+
+    for (int i = 0; i < ARRAY_SIZE(datavec); i++) {
+        ret = gpgme_io_writen(fd, datavec[i].data, datavec[i].size);
+        if (ret != 0) {
+            ret = gpg_error_from_syserror();
+            TRACE_GPG_ERROR("gpgme_io_writen failed", ret);
+
+            ctx->ret = authinfo_gpg_error2result(ret);
+            goto gpgme_passphrase_cb_free_pindata;
+        }
+    }
+
+    ctx->ret = AUTHINFO_OK;
+    ret = GPG_ERR_NO_ERROR;
+
+gpgme_passphrase_cb_free_pindata:
+    authinfo_data_free(pindata);
+
+    return ret;
+}
+
+static enum authinfo_result_t
+authinfo_gpgme_decrypt_loopback(gpgme_ctx_t gpgme_ctx,
+                                gpgme_data_t cipher_text,
+                                gpgme_data_t plain_text)
+{
+    int ret;
+
+    struct pinentry_t pinentry;
+    struct pinentry_settings_t settings = {
+        .lc_ctype = ctx.lc_ctype,
+        .lc_messages = ctx.lc_messages,
+        .timeout = 60,
+        .title = "title",
+        .description = "description",
+        .prompt = "prompt",
+    };
+
+    struct authinfo_passphrase_cb_ctx_t cb_ctx = {
+        /* if callback doesn't get called we assume that loopback mode in
+         * gpg-agent is disabled */
+        .ret = AUTHINFO_ENOLOOPBACK,
+        .pinentry = &pinentry,
+    };
+
+    ret = gpgme_set_pinentry_mode(gpgme_ctx, GPGME_PINENTRY_MODE_LOOPBACK);
+    if (ret != GPG_ERR_NO_ERROR) {
+        TRACE_GPG_ERROR("Could not set pinentry mode", ret);
+        return authinfo_gpg_error2result(ret);
+    }
+
+    gpgme_set_passphrase_cb(gpgme_ctx,
+                            authinfo_gpgme_passphrase_cb, (void *) &cb_ctx);
+
+    ret = pinentry_new(&settings, &pinentry);
+    if (ret != AUTHINFO_OK) {
+        return ret;
+    }
+
+    ret = authinfo_gpgme_do_decrypt(gpgme_ctx, cipher_text, plain_text);
+    if (ret != AUTHINFO_OK) {
+        /* return error from the callback if any */
+        if (cb_ctx.ret != AUTHINFO_OK) {
+            ret = cb_ctx.ret;
+        }
+    }
+
+    pinentry_release(&pinentry);
+
+    return ret;
+}
+
 static enum authinfo_result_t
 authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
                        struct authinfo_data_t **plain_text)
@@ -806,7 +926,7 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
         goto gpgme_decrypt_free_plain_text;
     }
 
-    ret = authinfo_gpgme_do_decrypt(ctx, cipher, plain);
+    ret = authinfo_gpgme_decrypt_loopback(ctx, cipher, plain);
     if (ret != AUTHINFO_OK) {
         goto gpgme_decrypt_release_plain;
     }

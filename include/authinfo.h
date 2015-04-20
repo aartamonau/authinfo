@@ -57,6 +57,8 @@ enum authinfo_result_t {
     AUTHINFO_EGPG_CANCELED,       /**< Operation canceled. */
     AUTHINFO_ENOMATCH,            /**< No matching entry was found. */
     AUTHINFO_EPARSE,              /**< Parse error. */
+    AUTHINFO_ENOLOOPBACK,         /**< Internal. allow-loopback-pinentry is
+                                   * false */
     AUTHINFO_RESULT_MAX
 };
 
