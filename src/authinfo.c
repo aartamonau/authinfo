@@ -111,6 +111,11 @@ authinfo_gpgme_decrypt_loopback(gpgme_ctx_t ctx,
                                 gpgme_data_t plain_text);
 
 static enum authinfo_result_t
+authinfo_gpgme_decrypt_no_loopback(gpgme_ctx_t ctx,
+                                   gpgme_data_t cipher_text,
+                                   gpgme_data_t plain_text);
+
+static enum authinfo_result_t
 authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
                        struct authinfo_data_t **plain_text);
 
@@ -881,6 +886,22 @@ authinfo_gpgme_decrypt_loopback(gpgme_ctx_t gpgme_ctx,
 }
 
 static enum authinfo_result_t
+authinfo_gpgme_decrypt_no_loopback(gpgme_ctx_t gpgme_ctx,
+                                   gpgme_data_t cipher_text,
+                                   gpgme_data_t plain_text)
+{
+    int ret;
+
+    ret = gpgme_set_pinentry_mode(gpgme_ctx, GPGME_PINENTRY_MODE_DEFAULT);
+    if (ret != GPG_ERR_NO_ERROR) {
+        TRACE_GPG_ERROR("Could not set pinentry mode", ret);
+        return authinfo_gpg_error2result(ret);
+    }
+
+    return authinfo_gpgme_do_decrypt(gpgme_ctx, cipher_text, plain_text);
+}
+
+static enum authinfo_result_t
 authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
                        struct authinfo_data_t **plain_text)
 {
@@ -928,7 +949,22 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
 
     ret = authinfo_gpgme_decrypt_loopback(ctx, cipher, plain);
     if (ret != AUTHINFO_OK) {
-        goto gpgme_decrypt_release_plain;
+        if (ret == AUTHINFO_ENOLOOPBACK) {
+            TRACE("Falling back to default pinentry mode\n");
+
+            if (gpgme_data_seek(cipher, 0, SEEK_SET) == -1) {
+                TRACE("Failed to rewind ciphertext data");
+                ret = AUTHINFO_EGPG;
+                goto gpgme_decrypt_release_plain;
+            }
+
+            ret = authinfo_gpgme_decrypt_no_loopback(ctx, cipher, plain);
+            if (ret != AUTHINFO_OK) {
+                goto gpgme_decrypt_release_plain;
+            }
+        } else {
+            goto gpgme_decrypt_release_plain;
+        }
     }
 
     (*plain_text)->type = ALLOCATED;
