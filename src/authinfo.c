@@ -49,6 +49,7 @@
 #define GPG_EXT ".gpg"
 #define GPG_PREFIX "gpg:"
 #define TOKEN_SIZE_MAX 8192
+#define LOOPBACK_RETRIES 3
 
 struct authinfo_password_t {
     struct authinfo_data_t *data;
@@ -872,7 +873,35 @@ authinfo_gpgme_decrypt_loopback(gpgme_ctx_t gpgme_ctx,
         return ret;
     }
 
-    ret = authinfo_gpgme_do_decrypt(gpgme_ctx, cipher_text, plain_text);
+    for (int i = 0; i < LOOPBACK_RETRIES; i++) {
+        if (gpgme_data_seek(cipher_text, 0, SEEK_SET) == -1) {
+            TRACE("Failed to rewind cipher text data");
+            ret = AUTHINFO_EGPG;
+            break;
+        }
+
+        if (i > 0) {
+            char error_msg[100];
+
+            snprintf(error_msg, ARRAY_SIZE(error_msg),
+                     "Bad Passpharse (try %d of %d)",
+                     i + 1, LOOPBACK_RETRIES);
+
+            ret = pinentry_set_error(&pinentry, error_msg);
+            if (ret != AUTHINFO_OK) {
+                break;
+            }
+        }
+
+        ret = authinfo_gpgme_do_decrypt(gpgme_ctx, cipher_text, plain_text);
+        if (ret == AUTHINFO_EGPG_DECRYPT_FAILED &&
+            cb_ctx.ret == AUTHINFO_OK) {
+            ret = AUTHINFO_EGPG_BAD_PASSPHRASE;
+        } else {
+            break;
+        }
+    }
+
     if (ret != AUTHINFO_OK) {
         /* return error from the callback if any */
         if (cb_ctx.ret != AUTHINFO_OK) {
