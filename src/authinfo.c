@@ -99,7 +99,7 @@ static enum authinfo_result_t authinfo_gpgme_init(void);
 static enum authinfo_result_t
 authinfo_gpgme_do_decrypt(gpgme_ctx_t ctx,
                           gpgme_data_t cipher_text,
-                          gpgme_data_t plain_text);
+                          gpgme_data_t *plain_text);
 
 static gpg_error_t
 authinfo_gpgme_passphrase_cb(void *data,
@@ -109,12 +109,12 @@ authinfo_gpgme_passphrase_cb(void *data,
 static enum authinfo_result_t
 authinfo_gpgme_decrypt_loopback(gpgme_ctx_t ctx,
                                 gpgme_data_t cipher_text,
-                                gpgme_data_t plain_text);
+                                gpgme_data_t *plain_text);
 
 static enum authinfo_result_t
 authinfo_gpgme_decrypt_no_loopback(gpgme_ctx_t ctx,
                                    gpgme_data_t cipher_text,
-                                   gpgme_data_t plain_text);
+                                   gpgme_data_t *plain_text);
 
 static enum authinfo_result_t
 authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
@@ -772,11 +772,18 @@ authinfo_gpgme_init(void)
 static enum authinfo_result_t
 authinfo_gpgme_do_decrypt(gpgme_ctx_t ctx,
                           gpgme_data_t cipher_text,
-                          gpgme_data_t plain_text)
+                          gpgme_data_t *plain_text)
 {
-    int ret = gpgme_op_decrypt(ctx, cipher_text, plain_text);
+    int ret = gpgme_data_new(plain_text);
+    if (ret != GPG_ERR_NO_ERROR) {
+        TRACE_GPG_ERROR("Could not create GPGME data buffer", ret);
+        return authinfo_gpg_error2result(ret);
+    }
+
+    ret = gpgme_op_decrypt(ctx, cipher_text, *plain_text);
     if (ret != GPG_ERR_NO_ERROR) {
         TRACE_GPG_ERROR("Could not decrypt cipher text", ret);
+        gpgme_data_release(*plain_text);
         return authinfo_gpg_error2result(ret);
     }
 
@@ -838,7 +845,7 @@ gpgme_passphrase_cb_free_pindata:
 static enum authinfo_result_t
 authinfo_gpgme_decrypt_loopback(gpgme_ctx_t gpgme_ctx,
                                 gpgme_data_t cipher_text,
-                                gpgme_data_t plain_text)
+                                gpgme_data_t *plain_text)
 {
     int ret;
 
@@ -917,7 +924,7 @@ authinfo_gpgme_decrypt_loopback(gpgme_ctx_t gpgme_ctx,
 static enum authinfo_result_t
 authinfo_gpgme_decrypt_no_loopback(gpgme_ctx_t gpgme_ctx,
                                    gpgme_data_t cipher_text,
-                                   gpgme_data_t plain_text)
+                                   gpgme_data_t *plain_text)
 {
     int ret;
 
@@ -969,14 +976,7 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
         goto gpgme_decrypt_release_cipher;
     }
 
-    gpgme_ret = gpgme_data_new(&plain);
-    if (gpgme_ret != GPG_ERR_NO_ERROR) {
-        TRACE_GPG_ERROR("Could not create GPGME data buffer", gpgme_ret);
-        ret = authinfo_gpg_error2result(gpgme_ret);
-        goto gpgme_decrypt_free_plain_text;
-    }
-
-    ret = authinfo_gpgme_decrypt_loopback(ctx, cipher, plain);
+    ret = authinfo_gpgme_decrypt_loopback(ctx, cipher, &plain);
     if (ret != AUTHINFO_OK) {
         if (ret == AUTHINFO_ENOLOOPBACK) {
             TRACE("Falling back to default pinentry mode\n");
@@ -984,15 +984,15 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
             if (gpgme_data_seek(cipher, 0, SEEK_SET) == -1) {
                 TRACE("Failed to rewind ciphertext data");
                 ret = AUTHINFO_EGPG;
-                goto gpgme_decrypt_release_plain;
+                goto gpgme_decrypt_free_plain_text;
             }
 
-            ret = authinfo_gpgme_decrypt_no_loopback(ctx, cipher, plain);
+            ret = authinfo_gpgme_decrypt_no_loopback(ctx, cipher, &plain);
             if (ret != AUTHINFO_OK) {
-                goto gpgme_decrypt_release_plain;
+                goto gpgme_decrypt_free_plain_text;
             }
         } else {
-            goto gpgme_decrypt_release_plain;
+            goto gpgme_decrypt_free_plain_text;
         }
     }
 
@@ -1005,8 +1005,6 @@ authinfo_gpgme_decrypt(const struct authinfo_data_t *cipher_text,
     ret = AUTHINFO_OK;
     goto gpgme_decrypt_release_cipher;
 
-gpgme_decrypt_release_plain:
-    gpgme_data_release(plain);
 gpgme_decrypt_free_plain_text:
     free(*plain_text);
 gpgme_decrypt_release_cipher:
