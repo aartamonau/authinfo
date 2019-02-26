@@ -20,24 +20,35 @@
    Authinfo follows usual GNU Autotools build procedure:
 
    #+BEGIN_SRC sh
-   ./configure
-   make all install
+   # Only required if you're missing ./configure (e.g. you're building from git)
+   $ ./autogen.sh
+
+   # Check build deps and configure the project.
+   $ ./configure
+
+   # Compile and install everything.
+   $ make all install
    #+END_SRC
 
-   Optional features:
+   If you encounter an error about undefined macro =AM_PATH_GPGME_PTHREAD= when
+   running =./autogen.sh= you will need to install the =libgpgme= autoconf
+   macros. On Ubuntu/Debian install the =libgpgme-dev= package, on Fedora or
+   other RPM based distros install the =gpgme-devel= package.
+
+*** Optional features:
      - GPG support (default is on)
 
-       To disable pass --disable-gpg flag to configure script. When enabled,
+       To disable pass =--disable-gpg= flag to configure script. When enabled,
        [[http://www.gnupg.org/related_software/gpgme/][GPGME]] must be installed in the system.
 
      - Python2 bindings (default is on)
 
-       To disable pass --disable-python flag to configure script. Minimal
+       To disable pass =--disable-python= flag to configure script. Minimal
        supported python version is 2.5. Python3 is not supported.
 
      - CLI tool (default is on)
 
-       To disable pass --disable-cli flag to configure script.
+       To disable pass =--disable-cli= flag to configure script.
 
 * Using it
 ** Password file
