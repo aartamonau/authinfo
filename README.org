@@ -41,10 +41,10 @@
        To disable pass =--disable-gpg= flag to configure script. When enabled,
        [[http://www.gnupg.org/related_software/gpgme/][GPGME]] must be installed in the system.
 
-     - Python2 bindings (default is on)
+     - Python2/3 bindings (default is on)
 
        To disable pass =--disable-python= flag to configure script. Minimal
-       supported python version is 2.5. Python3 is not supported.
+       supported python version is 2.5.
 
      - CLI tool (default is on)
 

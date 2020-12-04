@@ -2,8 +2,13 @@ from ctypes import cdll, Structure, POINTER, cast, byref, create_string_buffer
 from ctypes import c_char, c_char_p, c_int, c_uint, c_bool, c_void_p, c_size_t
 from ctypes.util import find_library
 
-from __init__ import libauthinfo_interface
+from . import libauthinfo_interface
 
+def _get_locale_encoding():
+    from locale import getdefaultlocale
+    _, enc = getdefaultlocale()
+    if enc is None: enc = 'ascii'
+    return enc
 
 __all__ = ['AuthinfoError', 'AuthinfoParseError', 'AuthinfoEntry', 'query']
 
@@ -230,20 +235,22 @@ class AuthinfoEntry(object):
         self.user = None
         self.password = None
 
+        encoding = _get_locale_encoding()
+
         if c_entry.host:
-            self.host = cast(c_entry.host, c_char_p).value
+            self.host = cast(c_entry.host, c_char_p).value.decode(encoding)
 
         if c_entry.protocol:
-            self.protocol = cast(c_entry.protocol, c_char_p).value
+            self.protocol = cast(c_entry.protocol, c_char_p).value.decode(encoding)
 
         if c_entry.user:
-            self.user = cast(c_entry.user, c_char_p).value
+            self.user = cast(c_entry.user, c_char_p).value.decode(encoding)
 
         if c_entry.password:
             c_password = c_char_p()
             _handle_authinfo_result(
                 authinfo_password_extract(c_entry.password, byref(c_password)))
-            self.password = c_password.value
+            self.password = c_password.value.decode(encoding)
 
         self.force = c_entry.force
 
@@ -267,6 +274,15 @@ def _handle_authinfo_result(ret):
 
     raise AuthinfoError(ret)
 
+def _compat_c_char_p():
+    import sys
+    if sys.version_info[0] > 2:
+        return (lambda x: c_char_p(bytes(x, _get_locale_encoding())))
+    else:
+        return c_char_p
+
+compat_c_char_p = _compat_c_char_p()
+
 
 class AuthinfoData(object):
     __slots__ = ['_data']
@@ -278,7 +294,7 @@ class AuthinfoData(object):
             c_path = c_char_p()
             _handle_authinfo_result(authinfo_find_file(byref(c_path)))
         else:
-            c_path = c_char_p(path)
+            c_path = compat_c_char_p(path)
 
         try:
             data = c_void_p()
@@ -295,7 +311,6 @@ class AuthinfoData(object):
     def get_data(self):
         return self._data
 
-
 def init(name=None):
     '''
     Initialize libauthinfo. `name` is a program name shown in a pinentry
@@ -309,7 +324,7 @@ def init(name=None):
         import sys
         name = sys.argv[0]
 
-    c_name = c_char_p(name)
+    c_name = compat_c_char_p(name)
     _handle_authinfo_result(authinfo_init(c_name))
 
 
@@ -322,9 +337,9 @@ def query(host=None, user=None, protocol=None, path=None):
 
     data = AuthinfoData(path)
 
-    c_host = host and c_char_p(host)
-    c_user = user and c_char_p(user)
-    c_protocol = protocol and c_char_p(protocol)
+    c_host = host and compat_c_char_p(host)
+    c_user = user and compat_c_char_p(user)
+    c_protocol = protocol and compat_c_char_p(protocol)
     c_entry = authinfo_parse_entry_t()
     c_error = authinfo_parse_error_t()
 
